@@ -35,6 +35,8 @@
 #define IMU_BMI160 8
 #define IMU_ICM20948 9
 #define IMU_ICM42688 10
+#define IMU_BMI270 11
+
 #define IMU_DEV_RESERVED 250 // Reserved, should not be used in any release firmware
 
 #define BOARD_UNKNOWN 0
@@ -93,6 +95,9 @@
 
 #define BMI160_MAG_TYPE_HMC 1
 #define BMI160_MAG_TYPE_QMC 2
+
+#define BMI270_MAG_TYPE_HMC 1
+#define BMI270_MAG_TYPE_QMC 2
 
 #define MCU_UKNOWN 0
 #define MCU_ESP8266 1

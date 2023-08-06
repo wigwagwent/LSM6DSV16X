@@ -393,17 +393,12 @@ void BMI270Sensor::motionLoop() {
             lastRotationPacketSent = now - (elapsed - sendInterval);
 
             fusedRotation = sfusion.getQuaternionQuat();
+            setFusedRotationReady();
 
-            sfusion.getLinearAcc(this->acceleration);
-			newAcceleration = true;
+            acceleration = sfusion.getLinearAccVec();
+            setAccelerationReady();
 
             fusedRotation *= sensorOffset;
-
-            if (!OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
-            {
-                newFusedRotation = true;
-                lastFusedRotationSent = fusedRotation;
-            }
 
             optimistic_yield(100);
         }

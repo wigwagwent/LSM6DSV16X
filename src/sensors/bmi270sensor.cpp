@@ -838,6 +838,9 @@ void BMI270Sensor::maybeCalibrateGyro() {
 
         int16_t gx, gy, gz;
         imu.getRotation(&gx, &gy, &gz);
+        #if BMI270_APPLY_ZX_CROSS_AXIS_FACTOR
+            gx = std::clamp((int32_t)(gx - (int16_t)(((int32_t) zx_cross_factor * (int32_t)gz) / 512)), (int32_t)INT16_MIN, (int32_t)INT16_MAX);
+        #endif
         rawGxyz[0] += gx;
         rawGxyz[1] += gy;
         rawGxyz[2] += gz;

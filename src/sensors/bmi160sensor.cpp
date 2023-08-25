@@ -776,9 +776,7 @@ void BMI160Sensor::maybeCalibrateGyro() {
     m_Calibration.G_off[1] = ((double)rawGxyz[1]) / gyroCalibrationSamples;
     m_Calibration.G_off[2] = ((double)rawGxyz[2]) / gyroCalibrationSamples;
 
-    #ifdef DEBUG_SENSOR
-        m_Logger.trace("Gyro calibration results: %f %f %f", UNPACK_VECTOR_ARRAY(m_Calibration.G_off));
-    #endif
+    m_Logger.info("Gyro calibration results: %f %f %f", UNPACK_VECTOR_ARRAY(m_Calibration.G_off));
 }
 
 void BMI160Sensor::maybeCalibrateAccel() {

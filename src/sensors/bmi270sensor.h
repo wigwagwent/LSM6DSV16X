@@ -122,7 +122,7 @@ static_assert(0x7FFF * BMI270_TEMP_CALIBRATION_REQUIRED_SAMPLES_PER_STEP < 0x7FF
 class BMI270Sensor : public Sensor {
     public:
         BMI270Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, int axisRemap=AXIS_REMAP_DEFAULT) :
-            Sensor("BMI270Sensor", IMU_BMI160, id, address, rotation, sclPin, sdaPin)
+            Sensor("BMI270Sensor", IMU_BMI270, id, address, rotation, sclPin, sdaPin)
             , axisRemap(axisRemap),
             sfusion(BMI270_ODR_GYR_MICROS / 1e6f, BMI270_ODR_ACC_MICROS / 1e6f, BMI270_ODR_MAG_MICROS / 1e6f)
         {

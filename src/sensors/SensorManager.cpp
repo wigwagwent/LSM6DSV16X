@@ -34,6 +34,8 @@
 #include "ErroneousSensor.h"
 #include "sensoraddresses.h"
 #include "GlobalVars.h"
+#include "softfusion/softfusionsensor.h"
+#include "softfusion/i2cimpl.h"
 
 #if ESP32
     #include "driver/i2c.h"
@@ -121,6 +123,9 @@ namespace SlimeVR
                     sensor = new BMI270Sensor(sensorID, address, rotation, sclPin, sdaPin, axisRemap);
                 }
                 }
+                break;
+            case IMU_LSM6DS3TRC:
+                sensor = new SoftFusionSensor<SoftFusion::Drivers::LSM6DS3TRC<SoftFusion::I2CImpl>>(sensorID, sclPin, sdaPin, rotation);
                 break;
             default:
                 sensor = new ErroneousSensor(sensorID, imuType);

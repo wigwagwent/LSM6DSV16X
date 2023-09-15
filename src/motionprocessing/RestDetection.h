@@ -103,7 +103,7 @@ public:
     }
 #endif
 
-    void updateGyr(uint32_t dtMicros, sensor_real_t gyr[3]) {
+    void updateGyr(const uint32_t dtMicros, const sensor_real_t gyr[3]) {
 #ifdef REST_DETECTION_DISABLE_LPF
         gyrLastSquaredDeviation =
             square(gyr[0] - lastSample.gyr[0]) +
@@ -140,7 +140,7 @@ public:
 #endif
     }
 
-    void updateAcc(uint32_t dtMicros, sensor_real_t acc[3]) {
+    void updateAcc(const uint32_t dtMicros, const sensor_real_t acc[3]) {
         if (acc[0] == sensor_real_t(0.0) && acc[1] == sensor_real_t(0.0) && acc[2] == sensor_real_t(0.0)) {
             return;
         }

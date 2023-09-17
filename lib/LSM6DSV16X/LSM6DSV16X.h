@@ -151,6 +151,7 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef beginPreconfigured();
     LSM6DSV16XStatusTypeDef end();
     LSM6DSV16XStatusTypeDef ReadID(uint8_t *Id);
+    LSM6DSV16XStatusTypeDef dump();
 
     LSM6DSV16XStatusTypeDef Enable_X();
     LSM6DSV16XStatusTypeDef Disable_X();

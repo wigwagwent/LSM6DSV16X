@@ -3878,6 +3878,7 @@ int32_t lsm6dsv16x_read_reg(stmdev_ctx_t *ctx, uint8_t reg,
 int32_t lsm6dsv16x_write_reg(stmdev_ctx_t *ctx, uint8_t reg,
                              uint8_t *data,
                              uint16_t len);
+int32_t lsm6dsv16x_dump(stmdev_ctx_t *ctx, uint8_t *val);
 
 float_t lsm6dsv16x_from_sflp_to_mg(int16_t lsb);
 float_t lsm6dsv16x_from_fs2_to_mg(int16_t lsb);

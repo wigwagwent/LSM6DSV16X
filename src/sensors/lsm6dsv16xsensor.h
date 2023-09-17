@@ -163,7 +163,10 @@ private:
 	SlimeVR::Configuration::LSM6DSV16XCalibrationConfig m_Calibration;
 	SlimeVR::Sensors::SensorFusionRestDetect sfusion;
 	float rawGyro[3];
+	int32_t extraRawGyro[3];
 	bool newRawGyro = false;
+	bool firstData = true;
+	Quat quatDataOffset;
 	Quat previousEspRotation;
 	uint8_t previousTag = 0;
 #endif

@@ -499,6 +499,16 @@ int32_t lsm6dsv16x_device_id_get(stmdev_ctx_t *ctx, uint8_t *val)
   return ret;
 }
 
+int32_t lsm6dsv16x_dump(stmdev_ctx_t *ctx, uint8_t *val)
+{
+  for (uint8_t i = 0; i < 0xFF; i++)
+  {
+    lsm6dsv16x_read_reg(ctx, i, &val[i], 1);
+  }
+
+  return 0;
+}
+
 /**
   * @brief  Accelerometer output data rate (ODR) selection.[set]
   *

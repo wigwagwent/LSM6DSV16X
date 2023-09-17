@@ -206,6 +206,12 @@ void LSM6DSV16XSensor::motionSetup() {
 		ledManager.pattern(50, 50, 200);
 		return;
 	}
+	delay(1000);
+	status |= imu.FIFO_Reset();
+	delay(100);
+
+
+	imu.dump();
 
 	lastData = millis();
 	working = true;
@@ -311,12 +317,53 @@ void LSM6DSV16XSensor::motionLoop() {
 
 #if defined(LSM6DSV16X_ONBOARD_FUSION) && defined(LSM6DSV16X_ESP_FUSION)
 
-	// TODO: fusion of fusion stuff
-	fusedRotation = sfusion.getQuaternionQuat();
+	Quat imuFused = fusedRotationToQuaternion(
+			fusedGameRotation[0],
+			fusedGameRotation[1],
+			fusedGameRotation[2]
+		);
+
+	if (firstData && sfusion.isUpdated()) {
+		quatDataOffset = sfusion.getQuaternionQuat().inverse() * imuFused.inverse();
+		firstData = false;
+	}
+
+	fusedRotation = sfusion.getQuaternionQuat()*quatDataOffset;
+
+	Vector3 imuRot = imuFused.get_euler() * dpsPerRad;
+	Vector3 espRot = fusedRotation.get_euler() * dpsPerRad;
+
 	lastFusedRotationSent = fusedRotation;
 	newFusedRotation = true;
 	newFusedGameRotation = false;
 	lastData = millis();
+	printf("\n%f,%f,%f,%f,%f,%f,%f,,%f,%f,%f,%f,%f,%f,%f,,%d,%f,%f,%f,%f,%f,%f,%d,%d,%d",
+		imuFused.components[0],
+		imuFused.components[1],
+		imuFused.components[2],
+		imuFused.components[3],
+		imuRot.x,
+		imuRot.y,
+		imuRot.z,
+		fusedRotation.components[0],
+		fusedRotation.components[1],
+		fusedRotation.components[2],
+		fusedRotation.components[3],
+		espRot.x,
+		espRot.y,
+		espRot.z,
+		currentDataTime,
+		rawAcceleration[0],
+		rawAcceleration[1],
+		rawAcceleration[2],
+		rawGyro[0],
+		rawGyro[1],
+		rawGyro[2],
+		extraRawGyro[0],
+		extraRawGyro[1],
+		extraRawGyro[2]
+	);
+	fusedRotation = imuFused;
 #elif defined(LSM6DSV16X_ONBOARD_FUSION)
 	if (newFusedGameRotation) {
 		fusedRotation = fusedRotationToQuaternion(
@@ -534,8 +581,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16XSensor::readFifo(uint16_t fifo_samples) {
 
 #ifdef LSM6DSV16X_ESP_FUSION
 			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_GY_NC_TAG: {
-				int32_t angularVelocity[3];
-				if (imu.FIFO_Get_G_Axes(angularVelocity) != LSM6DSV16X_OK) {
+				if (imu.FIFO_Get_G_Axes(extraRawGyro) != LSM6DSV16X_OK) {
 					m_Logger.error(
 						"Failed to get accelerometer data on %s at address 0x%02x",
 						getIMUNameByType(sensorType),
@@ -544,9 +590,9 @@ LSM6DSV16XStatusTypeDef LSM6DSV16XSensor::readFifo(uint16_t fifo_samples) {
 					return LSM6DSV16X_ERROR;
 				}
 				
-				rawGyro[0] = (float)angularVelocity[0] / mdpsPerDps;
-				rawGyro[1] = (float)angularVelocity[1] / mdpsPerDps;
-				rawGyro[2] = (float)angularVelocity[2] / mdpsPerDps;		
+				rawGyro[0] = (float)extraRawGyro[0] / mdpsPerDps;
+				rawGyro[1] = (float)extraRawGyro[1] / mdpsPerDps;
+				rawGyro[2] = (float)extraRawGyro[2] / mdpsPerDps;		
 
 				// convert to rads/s
 				rawGyro[0] /= dpsPerRad;

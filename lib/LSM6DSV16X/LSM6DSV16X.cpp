@@ -190,6 +190,25 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::ReadID(uint8_t *Id)
   return LSM6DSV16X_OK;
 }
 
+LSM6DSV16XStatusTypeDef LSM6DSV16X::dump()
+{
+  uint8_t val[0xFF] = {0};
+  if (lsm6dsv16x_dump(&reg_ctx, val) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  printf("\nRegister Dump");
+
+  for (uint8_t i = 0; i < 0xFF; i++)
+  {
+    printf("\n0x%02x,0x%02x", i, val[i]);
+  }
+  printf("\nRegister Dump Done");
+
+  return LSM6DSV16X_OK;
+}
+
+
+
 /**
  * @brief  Enable the LSM6DSV16X accelerometer sensor
  * @retval 0 in case of success, an error code otherwise

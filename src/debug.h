@@ -48,7 +48,7 @@
 #define serialDebug false // Set to true to get Serial output for debugging
 #define serialBaudRate 115200
 #define LED_INTERVAL_STANDBY 10000
-#define PRINT_STATE_EVERY_MS 60000
+//#define PRINT_STATE_EVERY_MS 60000
 
 // Determines how often we sample and send data
 #define samplingRateInMillis 10
@@ -76,7 +76,7 @@
 // If "false" updates are sent at the sensor update rate (usually 100 TPS)
 // If "true" updates will be less frequent in the time of little motion
 // Experimental
-#define OPTIMIZE_UPDATES true
+#define OPTIMIZE_UPDATES false
 
 #define I2C_SPEED 400000
 

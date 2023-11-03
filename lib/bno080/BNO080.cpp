@@ -353,6 +353,7 @@ uint16_t BNO080::parseInputReport(void)
 		rawMagX = data1;
 		rawMagY = data2;
 		rawMagZ = data3;
+		newMagData = true;
 	}
 	else if (shtpData[5] == SENSOR_REPORTID_ROTATION_VECTOR ||
 		shtpData[5] == SENSOR_REPORTID_GAME_ROTATION_VECTOR ||
@@ -737,6 +738,10 @@ uint8_t BNO080::getGyroAccuracy()
 	return (gyroAccuracy);
 }
 
+bool BNO080::hasNewMagData() {
+	return newMagData;
+}
+
 //Gets the full mag vector
 //x,y,z output floats
 void BNO080::getMag(float &x, float &y, float &z, uint8_t &accuracy)
@@ -745,6 +750,7 @@ void BNO080::getMag(float &x, float &y, float &z, uint8_t &accuracy)
 	y = qToFloat(rawMagY, magnetometer_Q1);
 	z = qToFloat(rawMagZ, magnetometer_Q1);
 	accuracy = magAccuracy;
+	newMagData = false;
 }
 
 //Return the magnetometer component

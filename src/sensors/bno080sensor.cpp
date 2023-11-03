@@ -36,49 +36,29 @@ void BNO080Sensor::motionSetup()
         return;
     }
 
-    m_Logger.info("Connected to %s on 0x%02x. "
-                  "Info: SW Version Major: 0x%02x "
-                  "SW Version Minor: 0x%02x "
-                  "SW Part Number: 0x%02x "
-                  "SW Build Number: 0x%02x "
-                  "SW Version Patch: 0x%02x",
-                  getIMUNameByType(sensorType),
-                  addr,
-                  imu.swMajor,
-                  imu.swMinor,
-                  imu.swPartNumber,
-                  imu.swBuildNumber,
-                  imu.swVersionPatch
-                );
+    m_Logger.info("Connected to %s on 0x%02x.", getIMUNameByType(sensorType), addr);
 
     this->imu.enableLinearAccelerometer(10);
 
-#if USE_6_AXIS
     if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
-        imu.enableARVRStabilizedGameRotationVector(10);
+        imu.enableARVRStabilizedGameRotationVector(10); //No mag
     } else {
         imu.enableGameRotationVector(10);
     }  
 
-    #if BNO_USE_MAGNETOMETER_CORRECTION
-    imu.enableRotationVector(1000);
-    #endif
-#else
     if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
-        imu.enableARVRStabilizedRotationVector(10);
+        imu.enableARVRStabilizedRotationVector(10); //Mag
     } else {
         imu.enableRotationVector(10);
     }
-#endif
 
-#if ENABLE_INSPECTION
-    imu.enableRawGyro(10);
-    imu.enableRawAccelerometer(10);
-    imu.enableRawMagnetometer(10);
-#endif
+    imu.enableGyro(1000);
+    imu.enableAccelerometer(1000);
+    imu.enableMagnetometer(magDelayTime);
 
     lastReset = 0;
     lastData = millis();
+    lastCalibrationMessage = millis();
     working = true;
     configured = true;
 }
@@ -88,76 +68,29 @@ void BNO080Sensor::motionLoop()
     //Look for reports from the IMU
     while (imu.dataAvailable())
     {
-        hadData = true;
-#if ENABLE_INSPECTION
-        {
-            int16_t rX = imu.getRawGyroX();
-            int16_t rY = imu.getRawGyroY();
-            int16_t rZ = imu.getRawGyroZ();
-            uint8_t rA = imu.getGyroAccuracy();
-
-            int16_t aX = imu.getRawAccelX();
-            int16_t aY = imu.getRawAccelY();
-            int16_t aZ = imu.getRawAccelZ();
-            uint8_t aA = imu.getAccelAccuracy();
-
-            int16_t mX = imu.getRawMagX();
-            int16_t mY = imu.getRawMagY();
-            int16_t mZ = imu.getRawMagZ();
-            uint8_t mA = imu.getMagAccuracy();
-
-            networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
-        }
-#endif
-
         lastReset = 0;
         lastData = millis();
 
-#if USE_6_AXIS
-        if (imu.hasNewGameQuat()) // New quaternion if context
+        if (imu.hasNewGameQuat()) // Magless quat
         {
-            imu.getGameQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, calibrationAccuracy);
-            fusedRotation *= sensorOffset;
-
-            setFusedRotationReady();
-            // Leave new quaternion if context open, it's closed later
-
-#else // USE_6_AXIS
-
+            imu.getGameQuat(maglessQuaternion.x, maglessQuaternion.y, maglessQuaternion.z, maglessQuaternion.w, calibrationAccuracy);
+            newMaglessQuat = true;
+            sensor_real_t magless[4];
+            quatToVqfFormat(maglessQuaternion, magless);
+            vqf.setQuat6D(magless);
+        }
+            
         if (imu.hasNewQuat()) // New quaternion if context
         {
-            imu.getQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, magneticAccuracyEstimate, calibrationAccuracy);
-            fusedRotation *= sensorOffset;
-
-            setFusedRotationReady();
-            // Leave new quaternion if context open, it's closed later
-#endif // USE_6_AXIS
-
-            // Continuation of the new quaternion if context, used for both 6 and 9 axis
-#if SEND_ACCELERATION
-            {
-                uint8_t acc;
-                imu.getLinAccel(acceleration.x, acceleration.y, acceleration.z, acc);
-                setAccelerationReady();
-            }
-#endif // SEND_ACCELERATION
-        } // Closing new quaternion if context
-
-#if USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
-        if (imu.hasNewMagQuat())
-        {
-            imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
-            magQuaternion *= sensorOffset;
-
-    #if ENABLE_INSPECTION
-            {
-                networkConnection.sendInspectionCorrectionData(sensorId, quaternion);
-            }
-    #endif // ENABLE_INSPECTION
-
-            newMagData = true;
+            imu.getQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
+            newMagQuat = true;
         }
-#endif // USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
+
+
+        if(imu.hasNewMagData()) { 
+            imu.getMag(Mxyz[0], Mxyz[1], Mxyz[2], magCalibrationAccuracy);
+            vqf.updateMag(Mxyz);
+        }
 
         if (imu.getTapDetected())
         {
@@ -166,6 +99,36 @@ void BNO080Sensor::motionLoop()
         if (m_IntPin == 255 || imu.I2CTimedOut())
             break;
     }
+
+
+
+    if (newMagQuat && newMaglessQuat) {
+        uint8_t acc;
+        imu.getLinAccel(acceleration.x, acceleration.y, acceleration.z, acc);
+        setAccelerationReady();
+
+        sensor_real_t vqf9D[4];
+        vqf.getQuat9D(vqf9D);
+        vqfToQuatFormat(vqf9D, magEspQuaternion);
+
+
+        //fusedRotation = maglessQuaternion;
+        //fusedRotation = magQuaternion;
+        //fusedRotation = magEspQuaternion;
+        fusedRotation = magQuaternion * magEspQuaternion.inverse(); //difference between them
+        fusedRotation *= sensorOffset;
+        setFusedRotationReady();
+    }
+
+    if (lastCalibrationMessage + 20000 < millis())
+    {
+        lastCalibrationMessage = millis();
+        m_Logger.info("Calibration Status: A: %d, G: %d, M: %d",
+            imu.getAccelAccuracy(), imu.getGyroAccuracy(), imu.getMagAccuracy()
+        );
+    }
+
+
     if (lastData + 1000 < millis() && configured)
     {
         while(true) {
@@ -192,48 +155,22 @@ void BNO080Sensor::motionLoop()
     }
 }
 
-SensorStatus BNO080Sensor::getSensorState() {
-    return lastReset > 0 ? SensorStatus::SENSOR_ERROR : isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
+void BNO080Sensor::quatToVqfFormat(Quat quat, sensor_real_t vqf[4]) {
+    vqf[0] = quat.w;
+    vqf[1] = quat.x;
+    vqf[2] = quat.y;
+    vqf[3] = quat.z;
 }
 
-void BNO080Sensor::sendData()
-{
-    if (newFusedRotation)
-    {
-        newFusedRotation = false;
-        networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
+void BNO080Sensor::vqfToQuatFormat(sensor_real_t vqf[4], Quat &quat) {
+    quat.w = vqf[0];
+    quat.x = vqf[1];
+    quat.y = vqf[2];
+    quat.z = vqf[3];
+}
 
-#ifdef DEBUG_SENSOR
-        m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));
-#endif
-
-#if SEND_ACCELERATION
-        if (newAcceleration)
-        {
-            newAcceleration = false;
-            networkConnection.sendSensorAcceleration(this->sensorId, this->acceleration);
-        }
-#endif
-    }
-
-#if !USE_6_AXIS
-        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
-#endif
-
-#if USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
-    if (newMagData)
-    {
-        newMagData = false;
-        networkConnection.sendRotationData(sensorId, &magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy);
-        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
-    }
-#endif
-
-    if (tap != 0)
-    {
-        networkConnection.sendSensorTap(sensorId, tap);
-        tap = 0;
-    }
+SensorStatus BNO080Sensor::getSensorState() {
+    return lastReset > 0 ? SensorStatus::SENSOR_ERROR : isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
 
 void BNO080Sensor::startCalibration(int calibrationType)

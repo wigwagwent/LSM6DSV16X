@@ -232,6 +232,7 @@ public:
 	float getFastGyroY();
 	float getFastGyroZ();
 
+	bool hasNewMagData();
 	void getMag(float &x, float &y, float &z, uint8_t &accuracy);
 	float getMagX();
 	float getMagY();
@@ -318,6 +319,7 @@ private:
 	uint16_t rawLinAccelX, rawLinAccelY, rawLinAccelZ, accelLinAccuracy;
 	uint16_t rawGyroX, rawGyroY, rawGyroZ, gyroAccuracy;
 	uint16_t rawMagX, rawMagY, rawMagZ, magAccuracy;
+	bool newMagData = false;
 	uint16_t rawQuatI, rawQuatJ, rawQuatK, rawQuatReal, rawQuatRadianAccuracy, quatAccuracy;
 	uint16_t rawGameQuatI, rawGameQuatJ, rawGameQuatK, rawGameQuatReal, quatGameAccuracy;
 	uint16_t rawMagQuatI, rawMagQuatJ, rawMagQuatK, rawMagQuatReal, rawMagQuatRadianAccuracy, quatMagAccuracy;

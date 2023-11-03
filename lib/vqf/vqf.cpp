@@ -163,26 +163,26 @@ void VQF::updateAcc(const vqf_real_t acc[3])
     // calculate correction angular rate to facilitate debugging
     state.lastAccCorrAngularRate = acos(accEarth[2])/coeffs.accTs;
 
+    updateQuat6D();
+
     // bias estimation
 #ifndef VQF_NO_MOTION_BIAS_ESTIMATION
     if (params.motionBiasEstEnabled || params.restBiasEstEnabled) {
         vqf_real_t biasClip = params.biasClip*vqf_real_t(M_PI/180.0);
 
-        vqf_real_t accGyrQuat[4];
         vqf_real_t R[9];
         vqf_real_t biasLp[2];
 
         // get rotation matrix corresponding to accGyrQuat
-        getQuat6D(accGyrQuat);
-        R[0] = 1 - 2*square(accGyrQuat[2]) - 2*square(accGyrQuat[3]); // r11
-        R[1] = 2*(accGyrQuat[2]*accGyrQuat[1] - accGyrQuat[0]*accGyrQuat[3]); // r12
-        R[2] = 2*(accGyrQuat[0]*accGyrQuat[2] + accGyrQuat[3]*accGyrQuat[1]); // r13
-        R[3] = 2*(accGyrQuat[0]*accGyrQuat[3] + accGyrQuat[2]*accGyrQuat[1]); // r21
-        R[4] = 1 - 2*square(accGyrQuat[1]) - 2*square(accGyrQuat[3]); // r22
-        R[5] = 2*(accGyrQuat[2]*accGyrQuat[3] - accGyrQuat[1]*accGyrQuat[0]); // r23
-        R[6] = 2*(accGyrQuat[3]*accGyrQuat[1] - accGyrQuat[0]*accGyrQuat[2]); // r31
-        R[7] = 2*(accGyrQuat[0]*accGyrQuat[1] + accGyrQuat[3]*accGyrQuat[2]); // r32
-        R[8] = 1 - 2*square(accGyrQuat[1]) - 2*square(accGyrQuat[2]); // r33
+        R[0] = 1 - 2*square(state.accGyrQuat[2]) - 2*square(state.accGyrQuat[3]); // r11
+        R[1] = 2*(state.accGyrQuat[2]*state.accGyrQuat[1] - state.accGyrQuat[0]*state.accGyrQuat[3]); // r12
+        R[2] = 2*(state.accGyrQuat[0]*state.accGyrQuat[2] + state.accGyrQuat[3]*state.accGyrQuat[1]); // r13
+        R[3] = 2*(state.accGyrQuat[0]*state.accGyrQuat[3] + state.accGyrQuat[2]*state.accGyrQuat[1]); // r21
+        R[4] = 1 - 2*square(state.accGyrQuat[1]) - 2*square(state.accGyrQuat[3]); // r22
+        R[5] = 2*(state.accGyrQuat[2]*state.accGyrQuat[3] - state.accGyrQuat[1]*state.accGyrQuat[0]); // r23
+        R[6] = 2*(state.accGyrQuat[3]*state.accGyrQuat[1] - state.accGyrQuat[0]*state.accGyrQuat[2]); // r31
+        R[7] = 2*(state.accGyrQuat[0]*state.accGyrQuat[1] + state.accGyrQuat[3]*state.accGyrQuat[2]); // r32
+        R[8] = 1 - 2*square(state.accGyrQuat[1]) - 2*square(state.accGyrQuat[2]); // r33
 
         // calculate R*b_hat (only the x and y component, as z is not needed)
         biasLp[0] = R[0]*state.bias[0] + R[1]*state.bias[1] + R[2]*state.bias[2];
@@ -297,9 +297,7 @@ void VQF::updateMag(const vqf_real_t mag[3])
     vqf_real_t magEarth[3];
 
     // bring magnetometer measurement into 6D earth frame
-    vqf_real_t accGyrQuat[4];
-    getQuat6D(accGyrQuat);
-    quatRotate(accGyrQuat, mag, magEarth);
+    quatRotate(state.accGyrQuat, mag, magEarth);
 
     if (params.magDistRejectionEnabled) {
         state.magNormDip[0] = norm(magEarth, 3);
@@ -409,13 +407,29 @@ void VQF::getQuat3D(vqf_real_t out[4]) const
 
 void VQF::getQuat6D(vqf_real_t out[4]) const
 {
-    quatMultiply(state.accQuat, state.gyrQuat, out);
+    std::copy(state.accGyrQuat, state.accGyrQuat+4, out);
+}
+
+void VQF::updateQuat6D()
+{
+    quatMultiply(state.accQuat, state.gyrQuat, state.accGyrQuat);
+}
+
+// w, x, y, z
+void VQF::setQuat6D(vqf_real_t quat6D[4])
+{
+    std::copy(quat6D, quat6D+4, state.accGyrQuat);
 }
 
 void VQF::getQuat9D(vqf_real_t out[4]) const
 {
-    quatMultiply(state.accQuat, state.gyrQuat, out);
+    getQuat6D(out);
     quatApplyDelta(out, state.delta, out);
+}
+
+void VQF::getQuat9DFrom6D(vqf_real_t quat6D[4], vqf_real_t out[4]) const
+{
+    quatApplyDelta(quat6D, state.delta, out);
 }
 
 vqf_real_t VQF::getDelta() const

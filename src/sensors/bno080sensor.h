@@ -26,12 +26,28 @@
 
 #include "sensor.h"
 #include <BNO080.h>
+#include "../motionprocessing/types.h"
+#include <vqf.h>
+
+constexpr uint16_t magDelayTime = 50; //milliseconds
 
 class BNO080Sensor : public Sensor
 {
+    struct SensorVQFParams: VQFParams {
+            SensorVQFParams() : VQFParams() {
+                #ifndef VQF_NO_MOTION_BIAS_ESTIMATION
+                motionBiasEstEnabled = false;
+                #endif
+                tauAcc = 2.0f;
+                restMinT = 2.0f;
+                restThGyr = 0.6f; // 400 norm
+                restThAcc = 0.06f; // 100 norm
+            }
+        };
+
 public:
     BNO080Sensor(uint8_t id, uint8_t type, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin)
-        : Sensor("BNO080Sensor", type, id, address, rotation, sclPin, sdaPin), m_IntPin(intPin) {};
+        : Sensor("BNO080Sensor", type, id, address, rotation, sclPin, sdaPin), m_IntPin(intPin), vqf(vqfParams, (float)magDelayTime * 1e-3) {};
     ~BNO080Sensor(){};
     void motionSetup() override final;
     void postSetup() override {
@@ -39,7 +55,6 @@ public:
     }
 
     void motionLoop() override final;
-    void sendData() override final;
     void startCalibration(int calibrationType) override final;
     SensorStatus getSensorState() override final;
 
@@ -50,14 +65,28 @@ private:
 
     uint8_t tap;
     unsigned long lastData = 0;
+    unsigned long lastCalibrationMessage = 0;
     uint8_t lastReset = 0;
     BNO080Error lastError{};
+    Quat maglessQuaternion{};
+    bool newMaglessQuat = false;
 
     // Magnetometer specific members
+    float Mxyz[3] = {};
+    Quat magEspQuaternion{};
+    bool newMagEspQuat = false;
+
     Quat magQuaternion{};
+    bool newMagQuat = false;
     uint8_t magCalibrationAccuracy = 0;
     float magneticAccuracyEstimate = 999;
     bool newMagData = false;
+
+    SensorVQFParams vqfParams {};
+    VQF vqf;
+
+    void quatToVqfFormat(Quat quat, sensor_real_t vqf[4]);
+    void vqfToQuatFormat(sensor_real_t vqf[4], Quat &quat);
 };
 
 #endif

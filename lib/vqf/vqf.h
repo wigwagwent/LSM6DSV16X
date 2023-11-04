@@ -297,6 +297,10 @@ struct VQFState {
      */
     vqf_real_t accQuat[4];
     /**
+     * @brief Quat from gyro and acceleration.
+     */
+    vqf_real_t accGyrQuat[4];
+    /**
      * @brief Heading difference \f$\delta\f$ between \f$\mathcal{E}_i\f$ and \f$\mathcal{E}\f$.
      *
      * \f$^{\mathcal{E}_i}_{\mathcal{E}}\mathbf{q} = \begin{bmatrix}\cos\frac{\delta}{2} & 0 & 0 &
@@ -689,12 +693,20 @@ public:
      * @param out output array for the quaternion
      */
     void getQuat6D(vqf_real_t out[4]) const;
+
+
+
+    void updateQuat6D();
+    void setQuat6D(vqf_real_t quat6D[4]);
+
+
     /**
      * @brief Returns the 9D (with magnetometers) orientation quaternion
      * \f$^{\mathcal{S}_i}_{\mathcal{E}}\mathbf{q}\f$.
      * @param out output array for the quaternion
      */
     void getQuat9D(vqf_real_t out[4]) const;
+    void getQuat9DFrom6D(vqf_real_t quat6D[4], vqf_real_t out[4]) const;
     /**
      * @brief Returns the heading difference \f$\delta\f$ between \f$\mathcal{E}_i\f$ and \f$\mathcal{E}\f$.
      *

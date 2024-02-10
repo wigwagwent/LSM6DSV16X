@@ -78,11 +78,6 @@ void LSM6DSVSensor::motionSetup() {
 		return;
 	}
 
-	status |= imu.Enable_6D_Orientation(LSM6DSV_INT2_PIN);
-	uint8_t isFaceDown;
-	// TODO: IMU rotation could be different (IMU upside down then isFaceUp)
-	status |= imu.Get_6D_Orientation_ZL(&isFaceDown);
-
 #ifndef LSM6DSV_NO_SELF_TEST_ON_FACEDOWN
 	if (isFaceDown) {
 		if (runSelfTest() != LSM6DSV_OK) {
@@ -144,14 +139,23 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.Set_Tap_Shock_Time(LSM6DSV_TAP_SHOCK_TIME);
 	status |= imu.Set_Tap_Quiet_Time(LSM6DSV_TAP_QUITE_TIME);
 
-		// Set maximums
-	status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
+	// ! This entire section stinks. We set some data rates, then 
+	// ! enable 6D which also sets data rates, then we check for facedown
+	// ! and set data rates again to overwrite what 6D set.
+
 	status |= imu.Set_G_FS(LSM6DSV_GYRO_MAX);
 
-	// Set data rate
-	status |= imu.Set_X_ODR(LSM6DSV_GYRO_ACCEL_RATE, LSM6DSV_ACC_HIGH_PERFORMANCE_MODE);
 	status |= imu.Set_G_ODR(LSM6DSV_GYRO_ACCEL_RATE, LSM6DSV_GYRO_HIGH_PERFORMANCE_MODE);
 	status |= imu.FIFO_Set_X_BDR(LSM6DSV_FIFO_DATA_RATE);
+
+	status |= imu.Enable_6D_Orientation(LSM6DSV_INT2_PIN);
+	uint8_t isFaceDown;
+	// TODO: IMU rotation could be different (IMU upside down then isFaceUp)
+	status |= imu.Get_6D_Orientation_ZL(&isFaceDown);
+	status |= imu.Disable_6D_Orientation();
+
+	status |= imu.Set_X_ODR(LSM6DSV_GYRO_ACCEL_RATE, LSM6DSV_ACC_HIGH_PERFORMANCE_MODE);
+	status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
 
 	#if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	// Calibration

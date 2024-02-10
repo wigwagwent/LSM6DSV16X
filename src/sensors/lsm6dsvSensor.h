@@ -92,7 +92,8 @@
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 #define LSM6DSV_GYRO_OFFSET_CAL
 #define LSM6DSV_ACCEL_OFFSET_CAL
-#define LSM6DSV_GYRO_SENSITIVITY_CAL
+// Uncomment the line below to enable gyro sensitivity calibration
+// #define LSM6DSV_GYRO_SENSITIVITY_CAL
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 
 class LSM6DSVSensor : public Sensor {

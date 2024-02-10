@@ -421,9 +421,9 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readFifo(uint16_t fifo_samples) {
 					);
 					return LSM6DSV_ERROR;
 				}
-				rawAcceleration[0] = (intAcceleration[0] / mgPerG);
-				rawAcceleration[1] = (intAcceleration[1] / mgPerG);
-				rawAcceleration[2] = (intAcceleration[2] / mgPerG);
+				rawAcceleration[0] = (intAcceleration[0] / mgPerG) * CONST_EARTH_GRAVITY;
+				rawAcceleration[1] = (intAcceleration[1] / mgPerG) * CONST_EARTH_GRAVITY;
+				rawAcceleration[2] = (intAcceleration[2] / mgPerG) * CONST_EARTH_GRAVITY;
 
 				newRawAcceleration = true;
 				break;

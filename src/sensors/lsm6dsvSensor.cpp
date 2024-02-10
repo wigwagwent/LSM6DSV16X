@@ -105,15 +105,6 @@ void LSM6DSVSensor::motionSetup() {
 
 	status |= imu.begin();
 
-	// Set maximums
-	status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
-	status |= imu.Set_G_FS(LSM6DSV_GYRO_MAX);
-
-	// Set data rate
-	status |= imu.Set_X_ODR(LSM6DSV_GYRO_ACCEL_RATE, LSM6DSV_ACC_HIGH_PERFORMANCE_MODE);
-	status |= imu.Set_G_ODR(LSM6DSV_GYRO_ACCEL_RATE, LSM6DSV_GYRO_HIGH_PERFORMANCE_MODE);
-	status |= imu.FIFO_Set_X_BDR(LSM6DSV_FIFO_DATA_RATE);
-
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	status |= imu.FIFO_Set_G_BDR(LSM6DSV_FIFO_DATA_RATE);
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
@@ -140,7 +131,29 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.Set_SFLP_Batch(true, true, false);
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ONBOARD
 
-#if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
+	status |= imu.Disable_6D_Orientation();
+
+#ifdef LSM6DSV_INTERRUPT
+	attachInterrupt(m_IntPin, interruptHandler, RISING);
+	status |= imu.Enable_Single_Tap_Detection(LSM6DSV_INT1_PIN);  // Tap recommends an interrupt
+#else
+	status |= imu.Enable_Single_Tap_Detection(LSM6DSV_INT2_PIN);  // Just poll to see if an event happened jank but works
+#endif  // LSM6DSV_INTERRUPT
+
+	status |= imu.Set_Tap_Threshold(LSM6DSV_TAP_THRESHOLD);
+	status |= imu.Set_Tap_Shock_Time(LSM6DSV_TAP_SHOCK_TIME);
+	status |= imu.Set_Tap_Quiet_Time(LSM6DSV_TAP_QUITE_TIME);
+
+		// Set maximums
+	status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
+	status |= imu.Set_G_FS(LSM6DSV_GYRO_MAX);
+
+	// Set data rate
+	status |= imu.Set_X_ODR(LSM6DSV_GYRO_ACCEL_RATE, LSM6DSV_ACC_HIGH_PERFORMANCE_MODE);
+	status |= imu.Set_G_ODR(LSM6DSV_GYRO_ACCEL_RATE, LSM6DSV_GYRO_HIGH_PERFORMANCE_MODE);
+	status |= imu.FIFO_Set_X_BDR(LSM6DSV_FIFO_DATA_RATE);
+
+	#if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	// Calibration
 	if (isFaceDown) {
 		startCalibration(0);  // can not calibrate onboard fusion
@@ -158,19 +171,6 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.Enable_X_User_Offset();
 #endif  // LSM6DSV_ACCEL_OFFSET_CAL
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
-
-	status |= imu.Disable_6D_Orientation();
-
-#ifdef LSM6DSV_INTERRUPT
-	attachInterrupt(m_IntPin, interruptHandler, RISING);
-	status |= imu.Enable_Single_Tap_Detection(LSM6DSV_INT1_PIN);  // Tap recommends an interrupt
-#else
-	status |= imu.Enable_Single_Tap_Detection(LSM6DSV_INT2_PIN);  // Just poll to see if an event happened jank but works
-#endif  // LSM6DSV_INTERRUPT
-
-	status |= imu.Set_Tap_Threshold(LSM6DSV_TAP_THRESHOLD);
-	status |= imu.Set_Tap_Shock_Time(LSM6DSV_TAP_SHOCK_TIME);
-	status |= imu.Set_Tap_Quiet_Time(LSM6DSV_TAP_QUITE_TIME);
 
 	status |= imu.FIFO_Reset();
 

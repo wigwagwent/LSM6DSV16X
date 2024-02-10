@@ -623,14 +623,12 @@ void LSM6DSVSensor::calibrateGyro() {
 	m_Calibration.G_off[1] = tempGxyz[1] / calibrationSamples;
 	m_Calibration.G_off[2] = tempGxyz[2] / calibrationSamples;
 
-#ifdef DEBUG_SENSOR
-	m_Logger.trace(
+	m_Logger.info(
 		"Gyro calibration results: %f %f %f",
 		m_Calibration.G_off[0],
 		m_Calibration.G_off[1],
 		m_Calibration.G_off[2]
 	);
-#endif  // DEBUG_SENSOR
 }
 #endif  // LSM6DSV_GYRO_OFFSET_CAL
 
@@ -759,14 +757,12 @@ void LSM6DSVSensor::calibrateAccel() {
 	m_Calibration.A_off[1] = A_BAinv[0][1];
 	m_Calibration.A_off[2] = A_BAinv[0][2];
 
-#ifdef DEBUG_SENSOR
-	m_Logger.trace(
+	m_Logger.info(
 		"Accel calibration results: %f %f %f",
 		m_Calibration.A_off[0],
 		m_Calibration.A_off[1],
 		m_Calibration.A_off[2]
 	);
-#endif  // DEBUG_SENSOR
 }
 #endif  // LSM6DSV_ACCEL_OFFSET_CAL
 
@@ -951,14 +947,12 @@ void LSM6DSVSensor::calibrateGyroSensitivity() {
 	m_Calibration.G_sensitivity[1] = calculatedScale[1];
 	m_Calibration.G_sensitivity[2] = calculatedScale[2];
 
-#ifdef DEBUG_SENSOR
-	m_Logger.trace(
+	m_Logger.info(
 		"Gyro Sensitivity calibration results: %f %f %f",
 		m_Calibration.G_sensitivity[0],
 		m_Calibration.G_sensitivity[1],
 		m_Calibration.G_sensitivity[2]
 	);
-#endif  // DEBUG_SENSOR
 }
 #endif  // LSM6DSV_GYRO_SENSITIVITY_CAL
 

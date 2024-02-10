@@ -151,9 +151,9 @@ void LSM6DSVSensor::motionSetup() {
 #ifdef LSM6DSV_ACCEL_OFFSET_CAL
 	int8_t status = 0;
 	status |= imu.Set_X_User_Offset(
-		m_Calibration.A_off[0],
-		m_Calibration.A_off[1],
-		m_Calibration.A_off[2]
+		m_Calibration.A_off[0] / CONST_EARTH_GRAVITY,
+		m_Calibration.A_off[1] / CONST_EARTH_GRAVITY,
+		m_Calibration.A_off[2] / CONST_EARTH_GRAVITY
 	);
 	status |= imu.Enable_X_User_Offset();
 #endif  // LSM6DSV_ACCEL_OFFSET_CAL

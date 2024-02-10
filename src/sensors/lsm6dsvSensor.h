@@ -77,7 +77,7 @@
 
 // #### General IMU Settings ####
 #define LSM6DSV_INTERRUPT  // interupt recommended but not required
-// #define LSM6DSV_NO_SELF_TEST_ON_FACEDOWN
+#define LSM6DSV_NO_SELF_TEST_ON_FACEDOWN
 #define LSM6DSV_FUSION_SOURCE LSM6DSV_FUSION_ESP  // LSM6DSV_FUSION_ESP or LSM6DSV_FUSION_ONBOARD
 
 // #### IMU Calibration ####

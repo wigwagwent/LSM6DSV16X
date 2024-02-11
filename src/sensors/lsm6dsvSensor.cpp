@@ -146,13 +146,14 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.Set_Tap_Shock_Time(LSM6DSV_TAP_SHOCK_TIME);
 	status |= imu.Set_Tap_Quiet_Time(LSM6DSV_TAP_QUITE_TIME);
 
+#if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
+
 	status |= imu.Enable_6D_Orientation(LSM6DSV_INT2_PIN);
 	uint8_t isFaceDown;
 	// TODO: IMU rotation could be different (IMU upside down then isFaceUp)
 	status |= imu.Get_6D_Orientation_ZL(&isFaceDown);
 	status |= imu.Disable_6D_Orientation();
 
-	#if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	// Calibration
 	if (isFaceDown) {
 		startCalibration(0);  // can not calibrate onboard fusion

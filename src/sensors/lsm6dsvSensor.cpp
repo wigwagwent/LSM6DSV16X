@@ -172,6 +172,10 @@ void LSM6DSVSensor::motionSetup() {
 #endif  // LSM6DSV_ACCEL_OFFSET_CAL
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 
+	// ! set these again
+	status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
+	status |= imu.Set_X_ODR(LSM6DSV_ACCEL_RATE, LSM6DSV_ACC_HIGH_PERFORMANCE_MODE);
+
 	status |= imu.FIFO_Reset();
 
 	if (status != LSM6DSV_OK) {

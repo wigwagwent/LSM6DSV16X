@@ -39,7 +39,7 @@
 
 // #### IMU Reading Speed ####
 #ifndef LSM6DSV_ACCEL_MAX
-#define LSM6DSV_ACCEL_MAX 4
+#define LSM6DSV_ACCEL_MAX 8
 #endif  // LSM6DSV_ACCEL_MAX
 
 #ifndef LSM6DSV_GYRO_MAX
@@ -51,11 +51,11 @@
 #endif  // LSM6DSV_FIFO_DATA_RATE
 
 #ifndef LSM6DSV_GYRO_RATE
-#define LSM6DSV_GYRO_RATE 480.0f
+#define LSM6DSV_GYRO_RATE 960.0f
 #endif  // LSM6DSV_GYRO_RATE
 
 #ifndef LSM6DSV_ACCEL_RATE
-#define LSM6DSV_ACCEL_RATE 120.0f
+#define LSM6DSV_ACCEL_RATE 480.0f
 #endif  // LSM6DSV_ACCEL_RATE
 
 #ifndef LSM6DSV_GYRO_LPF

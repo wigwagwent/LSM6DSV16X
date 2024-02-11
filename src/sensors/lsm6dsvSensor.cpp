@@ -103,8 +103,8 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.Set_G_FS(LSM6DSV_GYRO_MAX);
 	status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
 
-	status |= imu.Set_G_ODR(LSM6DSV_GYRO_ACCEL_RATE, LSM6DSV_GYRO_HIGH_PERFORMANCE_MODE);
-	status |= imu.Set_X_ODR(LSM6DSV_GYRO_ACCEL_RATE, LSM6DSV_ACC_HIGH_PERFORMANCE_MODE);
+	status |= imu.Set_G_ODR(LSM6DSV_GYRO_RATE, LSM6DSV_GYRO_HIGH_PERFORMANCE_MODE);
+	status |= imu.Set_X_ODR(LSM6DSV_ACCEL_RATE, LSM6DSV_ACC_HIGH_PERFORMANCE_MODE);
 	status |= imu.FIFO_Set_X_BDR(LSM6DSV_FIFO_DATA_RATE);
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
@@ -122,8 +122,8 @@ void LSM6DSVSensor::motionSetup() {
 
 	status |= imu.Enable_6D_Orientation(LSM6DSV_INT2_PIN);
 
-	status |= imu.Set_X_Filter_Mode(0, LSM6DSV_XL_LIGHT);
-	status |= imu.Set_G_Filter_Mode(0, LSM6DSV_GY_LIGHT);
+	status |= imu.Set_X_Filter_Mode(0, LSM6DSV_GYRO_LPF);
+	status |= imu.Set_G_Filter_Mode(0, LSM6DSV_ACCEL_LPF);
 
 	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV_STREAM_MODE);

@@ -120,8 +120,6 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.Enable_X();
 	status |= imu.Enable_G();
 
-	status |= imu.Enable_6D_Orientation(LSM6DSV_INT2_PIN);
-
 	status |= imu.Set_X_Filter_Mode(0, LSM6DSV_GYRO_LPF);
 	status |= imu.Set_G_Filter_Mode(0, LSM6DSV_ACCEL_LPF);
 
@@ -133,8 +131,6 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.Set_SFLP_Batch(true, true, false);
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ONBOARD
 
-	status |= imu.Disable_6D_Orientation();
-
 #ifdef LSM6DSV_INTERRUPT
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
 	status |= imu.Enable_Single_Tap_Detection(LSM6DSV_INT1_PIN);  // Tap recommends an interrupt
@@ -145,32 +141,6 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.Set_Tap_Threshold(LSM6DSV_TAP_THRESHOLD);
 	status |= imu.Set_Tap_Shock_Time(LSM6DSV_TAP_SHOCK_TIME);
 	status |= imu.Set_Tap_Quiet_Time(LSM6DSV_TAP_QUITE_TIME);
-
-#if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
-
-	status |= imu.Enable_6D_Orientation(LSM6DSV_INT2_PIN);
-	uint8_t isFaceDown;
-	// TODO: IMU rotation could be different (IMU upside down then isFaceUp)
-	status |= imu.Get_6D_Orientation_ZL(&isFaceDown);
-	status |= imu.Disable_6D_Orientation();
-
-	// Calibration
-	if (isFaceDown) {
-		startCalibration(0);  // can not calibrate onboard fusion
-	} else {
-		loadIMUCalibration();
-	}
-
-#ifdef LSM6DSV_ACCEL_OFFSET_CAL
-	int8_t status = 0;
-	status |= imu.Set_X_User_Offset(
-		m_Calibration.A_off[0] / CONST_EARTH_GRAVITY,
-		m_Calibration.A_off[1] / CONST_EARTH_GRAVITY,
-		m_Calibration.A_off[2] / CONST_EARTH_GRAVITY
-	);
-	status |= imu.Enable_X_User_Offset();
-#endif  // LSM6DSV_ACCEL_OFFSET_CAL
-#endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 
 	// ! set these again
 	status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
@@ -187,6 +157,10 @@ void LSM6DSVSensor::motionSetup() {
 		ledManager.pattern(50, 50, 200);
 		return;
 	}
+
+#if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
+	checkForCalibrationRequirements();
+#endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 
 	lastData = millis();
 	working = true;
@@ -586,6 +560,9 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::loadIMUCalibration() {
 			);
 			m_Logger.info("Calibration is advised");
 	}
+
+	applyCalibration();
+
 	return LSM6DSV_OK;
 }
 
@@ -960,17 +937,37 @@ void LSM6DSVSensor::calibrateGyroSensitivity() {
 }
 #endif  // LSM6DSV_GYRO_SENSITIVITY_CAL
 
-void LSM6DSVSensor::startCalibration(int calibrationType) {
-	m_Logger.info("Flip right side up in the next 5 seconds to start calibration.");
-	delay(5000);
-	uint8_t isFaceDown;
-	imu.Get_6D_Orientation_ZL(&isFaceDown);
+void LSM6DSVSensor::checkForCalibrationRequirements() {
+	// We need to wait for a bit for the acceleration values to normalize
+	// otherwise we get bogus values
+	delay(100);
 
-	if (isFaceDown) {
+	int32_t intAcceleration[3];
+	imu.Get_X_Axes(intAcceleration);
+
+	// TODO: implement axis remapping
+	float zAccel = intAcceleration[2] / mgPerG;
+
+	if (zAccel > -0.75) {
 		loadIMUCalibration();
 		return;
 	}
 
+	m_Logger.info("Flip right side up in the next 5 seconds to start calibration.");
+	delay(5000);
+
+	imu.Get_X_Axes(intAcceleration);
+	zAccel = intAcceleration[2] / mgPerG;
+
+	if (zAccel < 0.75) {
+		loadIMUCalibration();
+		return;
+	}
+
+	startCalibration(0);
+}
+
+void LSM6DSVSensor::startCalibration(int calibrationType) {
 	m_Calibration.G_sensitivity[0] = 1.0f;
 	m_Calibration.G_sensitivity[1] = 1.0f;
 	m_Calibration.G_sensitivity[2] = 1.0f;
@@ -988,6 +985,7 @@ void LSM6DSVSensor::startCalibration(int calibrationType) {
 #endif
 
 	saveCalibration();
+	applyCalibration();
 
 	m_Logger.info("Calibration finished, enjoy");
 }
@@ -1000,6 +998,18 @@ void LSM6DSVSensor::saveCalibration() {
 	calibration.data.lsm6dsv = m_Calibration;
 	configuration.setCalibration(sensorId, calibration);
 	configuration.save();
+}
+
+void LSM6DSVSensor::applyCalibration() {
+#ifdef LSM6DSV_ACCEL_OFFSET_CAL
+	int8_t status = 0;
+	status |= imu.Set_X_User_Offset(
+		m_Calibration.A_off[0] / CONST_EARTH_GRAVITY,
+		m_Calibration.A_off[1] / CONST_EARTH_GRAVITY,
+		m_Calibration.A_off[2] / CONST_EARTH_GRAVITY
+	);
+	status |= imu.Enable_X_User_Offset();
+#endif  // LSM6DSV_ACCEL_OFFSET_CAL
 }
 
 #endif  // (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)

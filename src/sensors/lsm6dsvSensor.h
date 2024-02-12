@@ -126,10 +126,16 @@ public:
 	SensorStatus getSensorState() override final;
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
+	void checkForCalibrationRequirements();
 	void startCalibration(int calibrationType) override final;
 	void calibrateGyro();
 	void calibrateAccel();
 	void calibrateGyroSensitivity();
+	LSM6DSVStatusTypeDef loadIMUCalibration();
+	void saveCalibration();
+	void applyCalibration();
+
+	SlimeVR::Configuration::LSM6DSVCalibrationConfig m_Calibration = {};
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 
 private:
@@ -151,9 +157,6 @@ private:
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	LSM6DSVStatusTypeDef readNextFifoFrame();
-	LSM6DSVStatusTypeDef loadIMUCalibration();
-	void saveCalibration();
-	SlimeVR::Configuration::LSM6DSVCalibrationConfig m_Calibration = {};
 	SlimeVR::Sensors::SensorFusionRestDetect sfusion;
 	float rawGyro[3];
 	bool newRawGyro = false;

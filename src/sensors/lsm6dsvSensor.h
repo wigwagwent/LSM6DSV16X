@@ -144,7 +144,6 @@ private:
 
 	LSM6DSV imu;
 	uint8_t m_IntPin;
-	uint8_t tap = 0;
 	int8_t status = 0;
 	unsigned long lastData = 0;
 	float temperature = 0;
@@ -154,6 +153,10 @@ private:
 	bool newRawAcceleration = false;
 	uint32_t previousDataTime = 0;
 	uint32_t currentDataTime = 0;
+
+#ifdef LSM6DSV_USE_ONBOARD_TAP_DETECTION
+	uint8_t tap = 0;
+#endif
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	LSM6DSVStatusTypeDef readNextFifoFrame();

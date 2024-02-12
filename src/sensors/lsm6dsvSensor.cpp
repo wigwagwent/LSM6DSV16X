@@ -131,6 +131,7 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.Set_SFLP_Batch(true, true, false);
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ONBOARD
 
+#ifdef LSM6DSV_USE_ONBOARD_TAP_DETECTION
 #ifdef LSM6DSV_INTERRUPT
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
 	status |= imu.Enable_Single_Tap_Detection(LSM6DSV_INT1_PIN);  // Tap recommends an interrupt
@@ -141,6 +142,7 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.Set_Tap_Threshold(LSM6DSV_TAP_THRESHOLD);
 	status |= imu.Set_Tap_Shock_Time(LSM6DSV_TAP_SHOCK_TIME);
 	status |= imu.Set_Tap_Quiet_Time(LSM6DSV_TAP_QUITE_TIME);
+#endif
 
 	// ! set these again
 	status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
@@ -174,6 +176,7 @@ constexpr float dpsPerRad = 57.295779578552f;
 constexpr uint8_t fifoFrameSize = 4;  // X BDR, (G BDR || Rotation), Gravity, Timestamp
 
 void LSM6DSVSensor::motionLoop() {
+#ifdef LSM6DSV_USE_ONBOARD_TAP_DETECTION
 #ifdef LSM6DSV_INTERRUPT
 	if (imuEvent) {
 		LSM6DSV_Event_Status_t eventStatus;
@@ -192,6 +195,7 @@ void LSM6DSVSensor::motionLoop() {
 		tap++;
 	}
 #endif  // LSM6DSV_INTERRUPT
+#endif
 
 	if (millis() - lastTempRead > LSM6DSV_TEMP_READ_INTERVAL * 1000) {
 		lastTempRead = millis();
@@ -340,10 +344,12 @@ void LSM6DSVSensor::sendData() {
 	}
 #endif  // SEND_ACCELERATION
 
+#ifdef LSM6DSV_USE_ONBOARD_TAP_DETECTION
 	if (tap != 0) {
 		networkConnection.sendSensorTap(sensorId, tap);
 		tap = 0;
 	}
+#endif
 
 	if (newTemperature) {
 		newTemperature = false;

@@ -131,7 +131,7 @@ public:
 	void calibrateGyro();
 	void calibrateAccel();
 	void calibrateGyroSensitivity();
-	LSM6DSVStatusTypeDef loadIMUCalibration();
+	void loadIMUCalibration();
 	void saveCalibration();
 	void applyCalibration();
 

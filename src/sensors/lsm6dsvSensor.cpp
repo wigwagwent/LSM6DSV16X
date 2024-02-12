@@ -78,22 +78,6 @@ void LSM6DSVSensor::motionSetup() {
 		return;
 	}
 
-#ifndef LSM6DSV_NO_SELF_TEST_ON_FACEDOWN
-	if (isFaceDown) {
-		if (runSelfTest() != LSM6DSV_OK) {
-			m_Logger.fatal(
-				"The %s at 0x%02x returned an error during the self test "
-				"(maybe it wasn't on a flat surface?)",
-				getIMUNameByType(sensorType),
-				addr
-			);
-			ledManager.pattern(50, 50, 200);
-			status = LSM6DSV_ERROR;
-			return;
-		}
-	}
-#endif  // LSM6DSV_NO_SELF_TEST_ON_FACEDOWN
-
 	m_Logger.info("Connected to %s on 0x%02x", getIMUNameByType(sensorType), addr);
 
 	status |= imu.Device_Reset(LSM6DSV_RESET_GLOBAL);
@@ -145,8 +129,8 @@ void LSM6DSVSensor::motionSetup() {
 #endif
 
 	// ! set these again
-	status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
-	status |= imu.Set_X_ODR(LSM6DSV_ACCEL_RATE, LSM6DSV_ACC_HIGH_PERFORMANCE_MODE);
+	// status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
+	// status |= imu.Set_X_ODR(LSM6DSV_ACCEL_RATE, LSM6DSV_ACC_HIGH_PERFORMANCE_MODE);
 
 	status |= imu.FIFO_Reset();
 
@@ -162,6 +146,9 @@ void LSM6DSVSensor::motionSetup() {
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	checkForCalibrationRequirements();
+	if (status == LSM6DSV_ERROR) {
+		return;
+	}
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 
 	lastData = millis();
@@ -499,18 +486,6 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readFifo(uint16_t fifo_samples) {
 				break;
 			}
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ONBOARD
-
-			default: {  // We don't use the data so remove from fifo
-				uint8_t data[6];
-				if (imu.FIFO_Get_Data(data) != LSM6DSV_OK) {
-					m_Logger.error(
-						"Failed to get unwanted data on %s at address 0x%02x",
-						getIMUNameByType(sensorType),
-						addr
-					);
-					return LSM6DSV_ERROR;
-				}
-			}
 		}
 	}
 	return LSM6DSV_OK;
@@ -542,7 +517,7 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readNextFifoFrame() {
 	return result;
 }
 
-LSM6DSVStatusTypeDef LSM6DSVSensor::loadIMUCalibration() {
+void LSM6DSVSensor::loadIMUCalibration() {
 	SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
 	// If no compatible calibration data is found, the calibration data will just be
 	// zero-ed out
@@ -568,8 +543,6 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::loadIMUCalibration() {
 	}
 
 	applyCalibration();
-
-	return LSM6DSV_OK;
 }
 
 #ifdef LSM6DSV_GYRO_OFFSET_CAL
@@ -949,7 +922,16 @@ void LSM6DSVSensor::checkForCalibrationRequirements() {
 	delay(100);
 
 	int32_t intAcceleration[3];
-	imu.Get_X_Axes(intAcceleration);
+	status |= imu.Get_X_Axes(intAcceleration);
+	if (status != LSM6DSV_OK) {
+		m_Logger.fatal(
+			"The %s at 0x%02x returned an error while getting its acceleration!",
+			getIMUNameByType(sensorType),
+			addr
+		);
+		ledManager.pattern(50, 50, 200);
+		return;
+	}
 
 	// TODO: implement axis remapping
 	float zAccel = intAcceleration[2] / mgPerG;
@@ -959,10 +941,34 @@ void LSM6DSVSensor::checkForCalibrationRequirements() {
 		return;
 	}
 
+#ifndef LSM6DSV_NO_SELF_TEST_ON_FACEDOWN
+	if (runSelfTest() != LSM6DSV_OK) {
+		m_Logger.fatal(
+			"The %s at 0x%02x returned an error during the self test "
+			"(maybe it wasn't on a flat surface?)",
+			getIMUNameByType(sensorType),
+			addr
+		);
+		ledManager.pattern(50, 50, 200);
+		state = LSM6DSV_ERROR;
+		return;
+	}
+#endif  // LSM6DSV_NO_SELF_TEST_ON_FACEDOWN
+
 	m_Logger.info("Flip right side up in the next 5 seconds to start calibration.");
 	delay(5000);
 
-	imu.Get_X_Axes(intAcceleration);
+	status |= imu.Get_X_Axes(intAcceleration);
+	if (status != LSM6DSV_OK) {
+		m_Logger.fatal(
+			"The %s at 0x%02x returned an error while getting its acceleration!",
+			getIMUNameByType(sensorType),
+			addr
+		);
+		ledManager.pattern(50, 50, 200);
+		return;
+	}
+
 	zAccel = intAcceleration[2] / mgPerG;
 
 	if (zAccel < 0.75) {
@@ -992,6 +998,9 @@ void LSM6DSVSensor::startCalibration(int calibrationType) {
 
 	saveCalibration();
 	applyCalibration();
+	if (status == LSM6DSV_ERROR) {
+		return;
+	}
 
 	m_Logger.info("Calibration finished, enjoy");
 }
@@ -1008,13 +1017,22 @@ void LSM6DSVSensor::saveCalibration() {
 
 void LSM6DSVSensor::applyCalibration() {
 #ifdef LSM6DSV_ACCEL_OFFSET_CAL
-	int8_t status = 0;
 	status |= imu.Set_X_User_Offset(
 		m_Calibration.A_off[0] / CONST_EARTH_GRAVITY,
 		m_Calibration.A_off[1] / CONST_EARTH_GRAVITY,
 		m_Calibration.A_off[2] / CONST_EARTH_GRAVITY
 	);
 	status |= imu.Enable_X_User_Offset();
+
+	if (status != LSM6DSV_OK) {
+		m_Logger.fatal(
+			"The %s at 0x%02x returned an error when applying calibration values!",
+			getIMUNameByType(sensorType),
+			addr
+		);
+		ledManager.pattern(50, 50, 200);
+		return;
+	}
 #endif  // LSM6DSV_ACCEL_OFFSET_CAL
 }
 

@@ -179,6 +179,8 @@ class LSM6DSV {
     LSM6DSVStatusTypeDef Set_G_Power_Mode(uint8_t PowerMode);
     LSM6DSVStatusTypeDef Set_G_Filter_Mode(uint8_t LowHighPassFlag, uint8_t FilterMode);
 
+    LSM6DSVStatusTypeDef Set_High_Accuracy_ODR(float GyroOdr, float AccelOdr);
+
     LSM6DSVStatusTypeDef Get_Temp_ODR(float *Odr);
     LSM6DSVStatusTypeDef Set_Temp_ODR(float Odr);
     LSM6DSVStatusTypeDef Get_Temp_Raw(int16_t *value);

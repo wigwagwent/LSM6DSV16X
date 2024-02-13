@@ -294,44 +294,124 @@ LSM6DSVStatusTypeDef LSM6DSV::Get_X_ODR(float *Odr)
       *Odr = 7.5f;
       break;
 
+    case LSM6DSV_ODR_HA02_AT_12Hz5:
+      *Odr = 12.5f;
+      break;
+
     case LSM6DSV_ODR_AT_15Hz:
       *Odr = 15.0f;
+      break;
+
+    case LSM6DSV_ODR_HA01_AT_15Hz625:
+      *Odr = 15.625f;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_25Hz:
+      *Odr = 25;
       break;
 
     case LSM6DSV_ODR_AT_30Hz:
       *Odr = 30.0f;
       break;
 
+    case LSM6DSV_ODR_HA01_AT_31Hz25:
+      *Odr = 31.25;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_50Hz:
+      *Odr = 50;
+      break;
+
     case LSM6DSV_ODR_AT_60Hz:
       *Odr = 60.0f;
+      break;
+
+    case LSM6DSV_ODR_HA01_AT_62Hz5:
+      *Odr = 62.5f;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_100Hz:
+      *Odr = 100;
       break;
 
     case LSM6DSV_ODR_AT_120Hz:
       *Odr = 120.0f;
       break;
 
+    case LSM6DSV_ODR_HA01_AT_125Hz:
+      *Odr = 125;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_200Hz:
+      *Odr = 200;
+      break;
+
     case LSM6DSV_ODR_AT_240Hz:
       *Odr = 240.0f;
+      break;
+
+    case LSM6DSV_ODR_HA01_AT_250Hz:
+      *Odr = 250;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_400Hz:
+      *Odr = 400;
       break;
 
     case LSM6DSV_ODR_AT_480Hz:
       *Odr = 480.0f;
       break;
 
+    case LSM6DSV_ODR_HA01_AT_500Hz:
+      *Odr = 500;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_800Hz:
+      *Odr = 800;
+      break;
+
     case LSM6DSV_ODR_AT_960Hz:
       *Odr = 960.0f;
+      break;
+
+    case LSM6DSV_ODR_HA01_AT_1000Hz:
+      *Odr = 1000;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_1600Hz:
+      *Odr = 1600;
       break;
 
     case LSM6DSV_ODR_AT_1920Hz:
       *Odr = 1920.0f;
       break;
 
+    case LSM6DSV_ODR_HA01_AT_2000Hz:
+      *Odr = 2000;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_3200Hz:
+      *Odr = 3200;
+      break;
+
     case LSM6DSV_ODR_AT_3840Hz:
       *Odr = 3840.0f;
       break;
 
+    case LSM6DSV_ODR_HA01_AT_4000Hz:
+      *Odr = 4000;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_6400Hz:
+      *Odr = 6400;
+      break;
+
     case LSM6DSV_ODR_AT_7680Hz:
       *Odr = 7680.0f;
+      break;
+
+    case LSM6DSV_ODR_HA01_AT_8000Hz:
+      *Odr = 8000;
       break;
 
     default:
@@ -2937,48 +3017,132 @@ LSM6DSVStatusTypeDef LSM6DSV::Get_G_ODR(float *Odr)
       *Odr = 0.0f;
       break;
 
+    case LSM6DSV_ODR_AT_1Hz875:
+      *Odr = 1.875f;
+      break;
+
     case LSM6DSV_ODR_AT_7Hz5:
       *Odr = 7.5f;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_12Hz5:
+      *Odr = 12.5f;
       break;
 
     case LSM6DSV_ODR_AT_15Hz:
       *Odr = 15.0f;
       break;
 
+    case LSM6DSV_ODR_HA01_AT_15Hz625:
+      *Odr = 15.625f;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_25Hz:
+      *Odr = 25;
+      break;
+
     case LSM6DSV_ODR_AT_30Hz:
       *Odr = 30.0f;
+      break;
+
+    case LSM6DSV_ODR_HA01_AT_31Hz25:
+      *Odr = 31.25;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_50Hz:
+      *Odr = 50;
       break;
 
     case LSM6DSV_ODR_AT_60Hz:
       *Odr = 60.0f;
       break;
 
+    case LSM6DSV_ODR_HA01_AT_62Hz5:
+      *Odr = 62.5f;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_100Hz:
+      *Odr = 100;
+      break;
+
     case LSM6DSV_ODR_AT_120Hz:
       *Odr = 120.0f;
+      break;
+
+    case LSM6DSV_ODR_HA01_AT_125Hz:
+      *Odr = 125;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_200Hz:
+      *Odr = 200;
       break;
 
     case LSM6DSV_ODR_AT_240Hz:
       *Odr = 240.0f;
       break;
 
+    case LSM6DSV_ODR_HA01_AT_250Hz:
+      *Odr = 250;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_400Hz:
+      *Odr = 400;
+      break;
+
     case LSM6DSV_ODR_AT_480Hz:
       *Odr = 480.0f;
+      break;
+
+    case LSM6DSV_ODR_HA01_AT_500Hz:
+      *Odr = 500;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_800Hz:
+      *Odr = 800;
       break;
 
     case LSM6DSV_ODR_AT_960Hz:
       *Odr = 960.0f;
       break;
 
+    case LSM6DSV_ODR_HA01_AT_1000Hz:
+      *Odr = 1000;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_1600Hz:
+      *Odr = 1600;
+      break;
+
     case LSM6DSV_ODR_AT_1920Hz:
       *Odr = 1920.0f;
+      break;
+
+    case LSM6DSV_ODR_HA01_AT_2000Hz:
+      *Odr = 2000;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_3200Hz:
+      *Odr = 3200;
       break;
 
     case LSM6DSV_ODR_AT_3840Hz:
       *Odr = 3840.0f;
       break;
 
+    case LSM6DSV_ODR_HA01_AT_4000Hz:
+      *Odr = 4000;
+      break;
+
+    case LSM6DSV_ODR_HA02_AT_6400Hz:
+      *Odr = 6400;
+      break;
+
     case LSM6DSV_ODR_AT_7680Hz:
       *Odr = 7680.0f;
+      break;
+
+    case LSM6DSV_ODR_HA01_AT_8000Hz:
+      *Odr = 8000;
       break;
 
     default:
@@ -3269,6 +3433,100 @@ LSM6DSVStatusTypeDef LSM6DSV::Set_G_Filter_Mode(uint8_t LowHighPassFlag, uint8_t
       return LSM6DSV_ERROR;
     }
   }
+  return LSM6DSV_OK;
+}
+
+lsm6dsv_data_rate_t Odr_To_Data_Rate(float Odr) {
+  if (Odr == 0) {
+    return LSM6DSV_ODR_OFF;
+  } else if (Odr <= 12.5) {
+    return LSM6DSV_ODR_HA02_AT_12Hz5;
+  } else if (Odr <= 15) {
+    return LSM6DSV_ODR_AT_15Hz;
+  } else if (Odr <= 15.625) {
+    return LSM6DSV_ODR_HA01_AT_15Hz625;
+  } else if (Odr <= 25) {
+    return LSM6DSV_ODR_HA02_AT_25Hz;
+  } else if (Odr <= 30) {
+    return LSM6DSV_ODR_AT_30Hz;
+  } else if (Odr <= 31.25) {
+    return LSM6DSV_ODR_HA01_AT_31Hz25;
+  } else if (Odr <= 50) {
+    return LSM6DSV_ODR_HA02_AT_50Hz;
+  } else if (Odr <= 60) {
+    return LSM6DSV_ODR_AT_60Hz;
+  } else if (Odr <= 62.5) {
+    return LSM6DSV_ODR_HA01_AT_62Hz5;
+  } else if (Odr <= 100) {
+    return LSM6DSV_ODR_HA02_AT_100Hz;
+  } else if (Odr <= 120) {
+    return LSM6DSV_ODR_AT_120Hz;
+  } else if (Odr <= 125) {
+    return LSM6DSV_ODR_HA01_AT_125Hz;
+  } else if (Odr <= 200) {
+    return LSM6DSV_ODR_HA02_AT_200Hz;
+  } else if (Odr <= 240) {
+    return LSM6DSV_ODR_AT_240Hz;
+  } else if (Odr <= 250) {
+    return LSM6DSV_ODR_HA01_AT_250Hz;
+  } else if (Odr <= 400) {
+    return LSM6DSV_ODR_HA02_AT_400Hz;
+  } else if (Odr <= 480) {
+    return LSM6DSV_ODR_AT_480Hz;
+  } else if (Odr <= 500) {
+    return LSM6DSV_ODR_HA01_AT_500Hz;
+  } else if (Odr <= 800) {
+    return LSM6DSV_ODR_HA02_AT_800Hz;
+  } else if (Odr <= 480) {
+    return LSM6DSV_ODR_AT_960Hz;
+  } else if (Odr <= 1000) {
+    return LSM6DSV_ODR_HA01_AT_1000Hz;
+  } else if (Odr <= 1600) {
+    return LSM6DSV_ODR_HA02_AT_1600Hz;
+  } else if (Odr <= 1920) {
+    return LSM6DSV_ODR_AT_1920Hz;
+  } else if (Odr <= 2000) {
+    return LSM6DSV_ODR_HA01_AT_2000Hz;
+  } else if (Odr <= 3200) {
+    return LSM6DSV_ODR_HA02_AT_3200Hz;
+  } else if (Odr <= 3840) {
+    return LSM6DSV_ODR_AT_3840Hz;
+  } else if (Odr <= 4000) {
+    return LSM6DSV_ODR_HA01_AT_4000Hz;
+  } else if (Odr <= 6400) {
+    return LSM6DSV_ODR_HA02_AT_6400Hz;
+  } else if (Odr <= 7680) {
+    return LSM6DSV_ODR_AT_7680Hz;
+  }
+
+  return LSM6DSV_ODR_HA01_AT_8000Hz;
+}
+
+LSM6DSVStatusTypeDef LSM6DSV::Set_High_Accuracy_ODR(float GyroOdr, float AccelOdr) {
+  lsm6dsv_data_rate_t gyro_data_rate = Odr_To_Data_Rate(GyroOdr);
+  if (lsm6dsv_gy_mode_set(&reg_ctx, LSM6DSV_GY_HIGH_ACCURACY_ODR_MD) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (gyro_is_enabled) {
+    if (lsm6dsv_gy_data_rate_set(&reg_ctx, gyro_data_rate) != LSM6DSV_OK) {
+      return LSM6DSV_ERROR;
+    }
+  }
+  gyro_odr = gyro_data_rate;
+
+  lsm6dsv_data_rate_t accel_data_rate = Odr_To_Data_Rate(AccelOdr);
+  if (lsm6dsv_xl_mode_set(&reg_ctx, LSM6DSV_XL_HIGH_ACCURACY_ODR_MD) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (acc_is_enabled) {
+    if (lsm6dsv_xl_data_rate_set(&reg_ctx, accel_data_rate) != LSM6DSV_OK) {
+      return LSM6DSV_ERROR;
+    }
+  }
+  acc_odr = accel_data_rate;
+
   return LSM6DSV_OK;
 }
 

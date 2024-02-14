@@ -39,7 +39,7 @@
 
 // #### IMU Reading Speed ####
 #ifndef LSM6DSV_ACCEL_MAX
-#define LSM6DSV_ACCEL_MAX 8
+#define LSM6DSV_ACCEL_MAX 4
 #endif  // LSM6DSV_ACCEL_MAX
 
 #ifndef LSM6DSV_GYRO_MAX
@@ -47,15 +47,15 @@
 #endif  // LSM6DSV_GYRO_MAX
 
 #ifndef LSM6DSV_FIFO_DATA_RATE
-#define LSM6DSV_FIFO_DATA_RATE 120
+#define LSM6DSV_FIFO_DATA_RATE 240.0f
 #endif  // LSM6DSV_FIFO_DATA_RATE
 
 #ifndef LSM6DSV_GYRO_RATE
-#define LSM6DSV_GYRO_RATE 960.0f
+#define LSM6DSV_GYRO_RATE 7680.0f
 #endif  // LSM6DSV_GYRO_RATE
 
 #ifndef LSM6DSV_ACCEL_RATE
-#define LSM6DSV_ACCEL_RATE 480.0f
+#define LSM6DSV_ACCEL_RATE 7680.0f
 #endif  // LSM6DSV_ACCEL_RATE
 
 #ifndef LSM6DSV_GYRO_LPF
@@ -108,6 +108,10 @@
 // #define LSM6DSV_GYRO_SENSITIVITY_CAL
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 
+#ifndef LSM6DSV_CALIBRATION_GYRO_SECONDS
+#define LSM6DSV_CALIBRATION_GYRO_SECONDS 5
+#endif
+
 class LSM6DSVSensor : public Sensor {
 public:
 	LSM6DSVSensor(
@@ -133,9 +137,19 @@ public:
 	void calibrateGyroSensitivity();
 	void loadIMUCalibration();
 	void saveCalibration();
-	void applyCalibration();
+	bool hasAccelCalibration();
+	bool hasGyroCalibration();
 
 	SlimeVR::Configuration::LSM6DSVCalibrationConfig m_Calibration = {};
+	bool isAccelCalibrated = false;
+	bool isGyroCalibrated = false;
+#endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
+
+#if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
+	void handleGyroSample(int32_t gyroSample[3]);
+	void handleAccelSample(int32_t accelSample[3]);
+
+	void applyCalibrationAndScale(float acceleration[3]);
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 
 private:
@@ -149,8 +163,6 @@ private:
 	float temperature = 0;
 	bool newTemperature = false;
 	uint32_t lastTempRead = 0;
-	float rawAcceleration[3];
-	bool newRawAcceleration = false;
 	uint32_t previousDataTime = 0;
 	uint32_t currentDataTime = 0;
 
@@ -161,8 +173,6 @@ private:
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	LSM6DSVStatusTypeDef readNextFifoFrame();
 	SlimeVR::Sensors::SensorFusionRestDetect sfusion;
-	float rawGyro[3];
-	bool newRawGyro = false;
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 };
 

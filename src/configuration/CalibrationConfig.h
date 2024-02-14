@@ -83,8 +83,12 @@ namespace SlimeVR {
             // gyroscope sensitivity
             float G_sensitivity[3];
 
-            // accelerometer bias
-            float A_off[3];
+            // accelerometer offsets and correction matrix
+            float A_B[3];
+            float A_Ainv[3][3];
+
+            // temperature
+            float temperature;
         };
 
         struct ICM42688CalibrationConfig {

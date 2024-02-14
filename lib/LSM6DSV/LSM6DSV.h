@@ -158,6 +158,7 @@ class LSM6DSV {
     LSM6DSVStatusTypeDef Set_X_FS(int32_t FullScale);
     LSM6DSVStatusTypeDef Get_X_AxesRaw(int16_t *Value);
     LSM6DSVStatusTypeDef Get_X_Axes(int32_t *Acceleration);
+    LSM6DSVStatusTypeDef Get_X_AxesRaw_When_Aval(int16_t *Value);
     LSM6DSVStatusTypeDef Get_X_DRDY_Status(uint8_t *Status);
     LSM6DSVStatusTypeDef Get_X_Event_Status(LSM6DSV_Event_Status_t *Status);
     LSM6DSVStatusTypeDef Set_X_Power_Mode(uint8_t PowerMode);
@@ -175,6 +176,7 @@ class LSM6DSV {
     LSM6DSVStatusTypeDef Set_G_FS(int32_t FullScale);
     LSM6DSVStatusTypeDef Get_G_AxesRaw(int16_t *Value);
     LSM6DSVStatusTypeDef Get_G_Axes(int32_t *AngularRate);
+    LSM6DSVStatusTypeDef Get_G_AxesRaw_When_Aval(int16_t *Value);
     LSM6DSVStatusTypeDef Get_G_DRDY_Status(uint8_t *Status);
     LSM6DSVStatusTypeDef Set_G_Power_Mode(uint8_t PowerMode);
     LSM6DSVStatusTypeDef Set_G_Filter_Mode(uint8_t LowHighPassFlag, uint8_t FilterMode);
@@ -365,8 +367,6 @@ class LSM6DSV {
     LSM6DSVStatusTypeDef Set_X_ODR_When_Disabled(float Odr);
     LSM6DSVStatusTypeDef Set_G_ODR_When_Enabled(float Odr);
     LSM6DSVStatusTypeDef Set_G_ODR_When_Disabled(float Odr);
-    LSM6DSVStatusTypeDef Get_X_AxesRaw_When_Aval(int16_t *Value);
-    LSM6DSVStatusTypeDef Get_G_AxesRaw_When_Aval(int16_t *Value);
     LSM6DSVStatusTypeDef npy_halfbits_to_floatbits(uint16_t h, uint32_t *f);
     LSM6DSVStatusTypeDef npy_half_to_float(uint16_t h, float *f);
     LSM6DSVStatusTypeDef sflp2q(float quat[4], uint16_t sflp[3]);

@@ -163,8 +163,6 @@ void LSM6DSVSensor::motionSetup() {
 
 	isAccelCalibrated = hasAccelCalibration();
 	isGyroCalibrated = hasGyroCalibration();
-
-	float odr_test;
 }
 
 constexpr float mgPerG = 1000.0f;

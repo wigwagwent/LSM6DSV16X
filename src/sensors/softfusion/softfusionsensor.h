@@ -3,6 +3,7 @@
 #include "../sensor.h"
 #include "drivers/lsm6ds3trc.h"
 #include "drivers/icm42688.h"
+#include "drivers/lsm6dsv.h"
 #include "../SensorFusionRestDetect.h"
 
 #include "GlobalVars.h"

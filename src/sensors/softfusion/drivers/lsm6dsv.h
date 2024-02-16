@@ -37,13 +37,17 @@ struct LSM6DSV
             static constexpr uint8_t value = 0x70;
         };
         static constexpr uint8_t OutTemp = 0x20;
+        struct HAODRCFG {
+            static constexpr uint8_t reg = 0x62;
+            static constexpr uint8_t value = (0b00); //1st ODR table
+        };
         struct Ctrl1XLODR {
             static constexpr uint8_t reg = 0x10;
-            static constexpr uint8_t value = (0b1000); //480Hz
+            static constexpr uint8_t value = (0b0010110); //120Hz, HAODR
         };
         struct Ctrl2GODR {
             static constexpr uint8_t reg = 0x11;
-            static constexpr uint8_t value = (0b1000); //480Hz
+            static constexpr uint8_t value = (0b0011000); //480Hz, HAODR
         };
         struct Ctrl3C {
             static constexpr uint8_t reg = 0x12;
@@ -76,6 +80,7 @@ struct LSM6DSV
         // perform initialization step
         i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
         delay(20);
+        i2c.writeReg(Regs::HAODRCFG::reg, Regs::HAODRCFG::value);
         i2c.writeReg(Regs::Ctrl1XLODR::reg, Regs::Ctrl1XLODR::value);
         i2c.writeReg(Regs::Ctrl2GODR::reg, Regs::Ctrl2GODR::value);
         i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);

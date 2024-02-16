@@ -43,7 +43,7 @@ struct LSM6DSV
         };
         struct Ctrl2GODR {
             static constexpr uint8_t reg = 0x11;
-            static constexpr uint8_t value = (0b1000 << 4); //480Hz
+            static constexpr uint8_t value = (0b1000); //480Hz
         };
         struct Ctrl3C {
             static constexpr uint8_t reg = 0x12;
@@ -94,43 +94,41 @@ struct LSM6DSV
         return result;
     }
 
-    struct FifoData {
-        uint8_t tag;
-        uint16_t x;
-        uint16_t y;
-        uint16_t z;
+    #pragma pack(push, 1)
+    struct FifoEntryAligned {
+        union {
+            int16_t xyz[3];
+            uint8_t raw[6];
+        };
     };
+    #pragma pack(pop)
+
+    static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
     template <typename AccelCall, typename GyroCall>
     void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
-        const auto read_result = i2c.readReg16(Regs::FifoStatus);
-        if (read_result & 0x4000) { // overrun!
-            // disable and re-enable fifo to clear it
-            printf("Fifo overrun, resetting\n");
-            i2c.writeReg(Regs::FifoCtrl4Mode::reg, 0);
-            i2c.writeReg(Regs::FifoCtrl4Mode::reg, Regs::FifoCtrl4Mode::value);
-            return;
-        }
-        const auto unread_bytes = read_result & 0x1ff / 16 / 3 * 7;
-        constexpr auto single_measurement_bytes = sizeof(FifoData);
+        const auto fifo_status = i2c.readReg16(Regs::FifoStatus);
+        const auto available_axes = fifo_status & 0x1ff;
+        const auto fifo_bytes = available_axes * 7;
         
-        std::array<FifoData, 10> read_buffer; // max 10 packages
-        const auto bytes_to_read = std::min(
-            static_cast<size_t>(read_buffer.size()) * sizeof(FifoData),
-            static_cast<size_t>(unread_bytes)) \
-                    / single_measurement_bytes * single_measurement_bytes;
+        std::array<uint8_t, FullFifoEntrySize * 8> read_buffer; // max 8 readings
+        const auto bytes_to_read = std::min(static_cast<size_t>(read_buffer.size()),
+            static_cast<size_t>(fifo_bytes)) / FullFifoEntrySize * FullFifoEntrySize;
+        i2c.readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
+        for (auto i=0u; i<bytes_to_read; i+=FullFifoEntrySize) {
+            FifoEntryAligned entry;
+            uint8_t tag = read_buffer[i] >> 3;
+            memcpy(entry.raw, &read_buffer[i+0x1], sizeof(FifoEntryAligned)); // skip fifo header
 
-        i2c.readBytes(Regs::FifoData, bytes_to_read, reinterpret_cast<uint8_t *>(read_buffer.data()));
-        for (uint16_t i=0; i < bytes_to_read / sizeof(FifoData); i++) {
-            switch ((read_buffer[i].tag & 0xf4) >> 3) {
-                case 0x01:
-                    processGyroSample(reinterpret_cast<const int16_t *>(&read_buffer[i].x), GyrTs);
+            switch (tag) {
+                case 0x01: // Gyro NC
+                    processGyroSample(entry.xyz, GyrTs);
                     break;
-                case 0x02:
-                    processAccelSample(reinterpret_cast<const int16_t *>(&read_buffer[i].x), AccTs);
+                case 0x02: // Accel NC
+                    processAccelSample(entry.xyz, AccTs);
                     break;
             }
-        }
+        }      
     }
 
 

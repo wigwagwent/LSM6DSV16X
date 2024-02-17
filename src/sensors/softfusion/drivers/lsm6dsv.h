@@ -9,11 +9,14 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 
 // Driver uses acceleration range at 8g
 // and gyroscope range at 1000dps
-// Gyroscope ODR = 480Hz, accel ODR = 480Hz
+// Gyroscope ODR = 480Hz, accel ODR = 120Hz
 
 template <typename I2CImpl>
 struct LSM6DSV
 {
+    uint32_t timestamp = 0;
+    uint32_t previous_timestamp = 0;
+
     static constexpr uint8_t Address = 0x6a;
     static constexpr auto Name = "LSM6DSV";
     static constexpr auto Type = ImuID::LSM6DSV;
@@ -37,9 +40,13 @@ struct LSM6DSV
             static constexpr uint8_t value = 0x70;
         };
         static constexpr uint8_t OutTemp = 0x20;
-        struct HAODRCFG {
+        struct HAODRCtrl {
             static constexpr uint8_t reg = 0x62;
             static constexpr uint8_t value = (0b00); //1st ODR table
+        };
+        struct FunctionsCtrl {
+            static constexpr uint8_t reg = 0x50;
+            static constexpr uint8_t value = (0b01000000); //Enable timestamping
         };
         struct Ctrl1XLODR {
             static constexpr uint8_t reg = 0x10;
@@ -68,7 +75,7 @@ struct LSM6DSV
         };
         struct FifoCtrl4Mode {
             static constexpr uint8_t reg = 0x0a;
-            static constexpr uint8_t value = (0b110); //continuous mode
+            static constexpr uint8_t value = (0b01000110); //continuous mode, timestamp in FIFO
         };
 
         static constexpr uint8_t FifoStatus = 0x1b;
@@ -80,7 +87,8 @@ struct LSM6DSV
         // perform initialization step
         i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
         delay(20);
-        i2c.writeReg(Regs::HAODRCFG::reg, Regs::HAODRCFG::value);
+        i2c.writeReg(Regs::HAODRCtrl::reg, Regs::HAODRCtrl::value);
+        i2c.writeReg(Regs::FunctionsCtrl::reg, Regs::FunctionsCtrl::value);
         i2c.writeReg(Regs::Ctrl1XLODR::reg, Regs::Ctrl1XLODR::value);
         i2c.writeReg(Regs::Ctrl2GODR::reg, Regs::Ctrl2GODR::value);
         i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
@@ -127,10 +135,15 @@ struct LSM6DSV
 
             switch (tag) {
                 case 0x01: // Gyro NC
-                    processGyroSample(entry.xyz, GyrTs);
+                    processGyroSample(entry.xyz, float((timestamp - previous_timestamp) * 21.75 / 1e6));
                     break;
                 case 0x02: // Accel NC
-                    processAccelSample(entry.xyz, AccTs);
+                    processAccelSample(entry.xyz, float((timestamp - previous_timestamp) * 21.75 / 1e6));
+                    break;
+                case 0x04: // Timestamp
+                    previous_timestamp = timestamp;
+                    // Multiply by 21.75 to convert to microseconds, divide by 1e6 to convert to seconds
+                    timestamp = entry.raw[0] | (entry.raw[1] << 8) | (entry.raw[2] << 16) | (entry.raw[3] << 24);
                     break;
             }
         }      

@@ -14,8 +14,9 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 template <typename I2CImpl>
 struct LSM6DSV
 {
-    uint32_t timestamp = 0;
-    uint32_t previous_timestamp = 0;
+    uint32_t currentTimestamp = 0;
+    uint32_t previousGyroTimestamp = 0;
+    uint32_t previousAccelTimestamp = 0;
 
     static constexpr uint8_t Address = 0x6a;
     static constexpr auto Name = "LSM6DSV";
@@ -135,15 +136,16 @@ struct LSM6DSV
 
             switch (tag) {
                 case 0x01: // Gyro NC
-                    processGyroSample(entry.xyz, float((timestamp - previous_timestamp) * 21.75 / 1e6));
+                    processGyroSample(entry.xyz, float((currentTimestamp - previousGyroTimestamp) * 21.75 / 1e6));
+                    previousGyroTimestamp = currentTimestamp;
                     break;
                 case 0x02: // Accel NC
-                    processAccelSample(entry.xyz, float((timestamp - previous_timestamp) * 21.75 / 1e6));
+                    processAccelSample(entry.xyz, float((currentTimestamp - previousAccelTimestamp) * 21.75 / 1e6));
+                    previousAccelTimestamp = currentTimestamp;
                     break;
                 case 0x04: // Timestamp
-                    previous_timestamp = timestamp;
                     // Multiply by 21.75 to convert to microseconds, divide by 1e6 to convert to seconds
-                    timestamp = entry.raw[0] | (entry.raw[1] << 8) | (entry.raw[2] << 16) | (entry.raw[3] << 24);
+                    currentTimestamp = entry.raw[0] | (entry.raw[1] << 8) | (entry.raw[2] << 16) | (entry.raw[3] << 24);
                     break;
             }
         }      

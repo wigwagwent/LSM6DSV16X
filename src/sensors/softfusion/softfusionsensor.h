@@ -80,7 +80,7 @@ class SoftFusionSensor : public Sensor
         accelData[1] = (m_calibration.A_Ainv[1][0] * tmp[0] + m_calibration.A_Ainv[1][1] * tmp[1] + m_calibration.A_Ainv[1][2] * tmp[2]) * AScale;
         accelData[2] = (m_calibration.A_Ainv[2][0] * tmp[0] + m_calibration.A_Ainv[2][1] * tmp[1] + m_calibration.A_Ainv[2][2] * tmp[2]) * AScale;
 
-        m_fusion.updateAcc(accelData, timeDelta);
+        m_fusion.updateAcc(accelData, m_calibration.A_Ts);
     }
 
     void processGyroSample(const int16_t xyz[3], const sensor_real_t timeDelta)

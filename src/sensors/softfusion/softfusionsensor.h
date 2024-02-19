@@ -5,6 +5,7 @@
 #include "drivers/icm42688.h"
 #include "drivers/lsm6dsv.h"
 #include "../SensorFusionRestDetect.h"
+#include "../../motionprocessing/GyroTemperatureCalibrator.h"
 
 #include "GlobalVars.h"
 
@@ -31,6 +32,9 @@ class SoftFusionSensor : public Sensor
     static constexpr float GyrOdrMicros = imu::GyrTs * 1e6f;
     static constexpr float AccOdrMicros = imu::AccTs * 1e6f;
 
+    double GOxyzStaticTempCompensated[3] = {0.0, 0.0, 0.0};
+
+    GyroTemperatureCalibrator *gyroTempCalibrator = nullptr;
 
     bool detected() const {
         const auto value = m_sensor.i2c.readReg(imu::Regs::WhoAmI::reg);
@@ -43,7 +47,6 @@ class SoftFusionSensor : public Sensor
         return true;
     }
 
-
     void sendTempIfNeeded() {
         uint32_t now = micros();
         constexpr float maxSendRateHz = 2.0f;
@@ -52,7 +55,8 @@ class SoftFusionSensor : public Sensor
         if (elapsed >= sendInterval) {
             const float temperature = m_sensor.getDirectTemp();
             m_lastTemperaturePacketSent = now - (elapsed - sendInterval);
-            networkConnection.sendTemperature(sensorId, temperature);
+            uint32_t isCalibrating = gyroTempCalibrator->isCalibrating() ? 10000 : 0;
+            networkConnection.sendTemperature(sensorId, isCalibrating + 10000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature);
         }
     }
 
@@ -81,11 +85,31 @@ class SoftFusionSensor : public Sensor
 
     void processGyroSample(const int16_t xyz[3], const sensor_real_t timeDelta)
     {
+        #if BMI160_USE_TEMPCAL
+            bool restDetected = m_fusion.getRestDetected();
+            gyroTempCalibrator->updateGyroTemperatureCalibration(m_sensor.getDirectTemp(), restDetected, xyz[0], xyz[1], xyz[2]);
+        #endif
+
         const sensor_real_t scaledData[] = {
             static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[0]) - m_calibration.G_off[0])),
             static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[1]) - m_calibration.G_off[1])),
             static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off[2]))};
-        m_fusion.updateGyro(scaledData, timeDelta);
+
+        float Gxyz[3];
+        float GOxyz[3];
+        if (gyroTempCalibrator->approximateOffset(m_sensor.getDirectTemp(), GOxyz)) {
+            Gxyz[0] = (sensor_real_t)((((double)xyz[0] - GOxyz[0] - GOxyzStaticTempCompensated[0]) * GScale));
+            Gxyz[1] = (sensor_real_t)((((double)xyz[1] - GOxyz[1] - GOxyzStaticTempCompensated[1]) * GScale));
+            Gxyz[2] = (sensor_real_t)((((double)xyz[2] - GOxyz[2] - GOxyzStaticTempCompensated[2]) * GScale));
+        }
+        else
+        {
+            Gxyz[0] = scaledData[0];
+            Gxyz[1] = scaledData[1];
+            Gxyz[2] = scaledData[2];
+        }
+
+        m_fusion.updateGyro(Gxyz, m_calibration.G_Ts);
     }
 
     void eatSamplesForSeconds(const size_t seconds) {
@@ -226,6 +250,22 @@ public:
                 }
 
                 ledManager.off();
+            }
+        }
+
+        gyroTempCalibrator = new GyroTemperatureCalibrator(
+            SlimeVR::Configuration::CalibrationConfigType::SFUSION,
+            sensorId,
+            imu::GyroSensitivity,
+            80U
+        );
+
+        gyroTempCalibrator->loadConfig(BMI160_GYRO_TYPICAL_SENSITIVITY_LSB);
+        if (gyroTempCalibrator->config.hasCoeffs) {
+            float GOxyzAtTemp[3];
+            gyroTempCalibrator->approximateOffset(m_calibration.temperature, GOxyzAtTemp);
+            for (uint32_t i = 0; i < 3; i++) {
+                GOxyzStaticTempCompensated[i] = m_calibration.G_off[i] - GOxyzAtTemp[i];
             }
         }
     }
@@ -465,6 +505,56 @@ public:
     uint32_t m_lastPollTime = micros();
     uint32_t m_lastRotationPacketSent = 0;
     uint32_t m_lastTemperaturePacketSent = 0;
+
+    void printTemperatureCalibrationState() {
+        const auto degCtoF = [](float degC) { return (degC * 9.0f/5.0f) + 32.0f; };
+
+        float temperature = m_sensor.getDirectTemp();
+
+        m_Logger.info("Sensor %i temperature calibration state:", sensorId);
+        m_Logger.info("  current temp: %0.4f C (%0.4f F)", temperature, degCtoF(temperature));
+        auto printTemperatureRange = [&](const char* label, float min, float max) {
+            m_Logger.info("  %s: min %0.4f C max %0.4f C (min %0.4f F max %0.4f F)",
+                label, min, max, degCtoF(min), degCtoF(max)
+            );
+        };
+        printTemperatureRange("total range",
+            TEMP_CALIBRATION_MIN,
+            TEMP_CALIBRATION_MAX
+        );
+        printTemperatureRange("calibrated range",
+            gyroTempCalibrator->config.minTemperatureRange,
+            gyroTempCalibrator->config.maxTemperatureRange
+        );
+        m_Logger.info("  done: %0.1f%", gyroTempCalibrator->config.getCalibrationDonePercent());
+    }
+    void printDebugTemperatureCalibrationState() {
+        m_Logger.info("Sensor %i gyro odr %f hz, sensitivity %f lsb",
+            sensorId,
+            BMI160_ODR_GYR_HZ,
+            BMI160_GYRO_TYPICAL_SENSITIVITY_LSB
+        );
+        m_Logger.info("Sensor %i temperature calibration matrix (tempC x y z):", sensorId);
+        m_Logger.info("BUF %i %i", sensorId, TEMP_CALIBRATION_BUFFER_SIZE);
+        m_Logger.info("SENS %i %f", sensorId, BMI160_GYRO_TYPICAL_SENSITIVITY_LSB);
+        m_Logger.info("DATA %i", sensorId);
+        for (int i = 0; i < TEMP_CALIBRATION_BUFFER_SIZE; i++) {
+            m_Logger.info("%f %f %f %f",
+                gyroTempCalibrator->config.samples[i].t,
+                gyroTempCalibrator->config.samples[i].x,
+                gyroTempCalibrator->config.samples[i].y,
+                gyroTempCalibrator->config.samples[i].z
+            );
+        }
+        m_Logger.info("END %i", sensorId);
+        m_Logger.info("y = %f + (%fx) + (%fxx) + (%fxxx)", UNPACK_VECTOR_ARRAY(gyroTempCalibrator->config.cx), gyroTempCalibrator->config.cx[3]);
+        m_Logger.info("y = %f + (%fx) + (%fxx) + (%fxxx)", UNPACK_VECTOR_ARRAY(gyroTempCalibrator->config.cy), gyroTempCalibrator->config.cy[3]);
+        m_Logger.info("y = %f + (%fx) + (%fxx) + (%fxxx)", UNPACK_VECTOR_ARRAY(gyroTempCalibrator->config.cz), gyroTempCalibrator->config.cz[3]);
+    }
+
+    void saveTemperatureCalibration() {
+        gyroTempCalibrator->saveConfig();
+    }
 };
 
 } // namespace

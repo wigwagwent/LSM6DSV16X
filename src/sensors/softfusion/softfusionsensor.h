@@ -257,7 +257,7 @@ public:
             SlimeVR::Configuration::CalibrationConfigType::SFUSION,
             sensorId,
             imu::GyroSensitivity,
-            80U
+            96U
         );
 
         gyroTempCalibrator->loadConfig(BMI160_GYRO_TYPICAL_SENSITIVITY_LSB);

@@ -64,7 +64,7 @@ struct LSM6DSV
         };
         struct FifoCtrl3BDR {
             static constexpr uint8_t reg = 0x09;
-            static constexpr uint8_t value = (0b1000) | (0b1000 << 4); //gyro and accel batched at 480Hz
+            static constexpr uint8_t value = (0b0110) | (0b1000 << 4); //accel batched at 120hz, gyro batched at 480hz
         };
         struct FifoCtrl4Mode {
             static constexpr uint8_t reg = 0x0a;
@@ -135,8 +135,6 @@ struct LSM6DSV
             }
         }      
     }
-
-
 };
 
 } // namespace

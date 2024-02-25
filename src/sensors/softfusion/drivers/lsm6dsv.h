@@ -72,7 +72,7 @@ struct LSM6DSV
         };
         struct FifoCtrl3BDR {
             static constexpr uint8_t reg = 0x09;
-            static constexpr uint8_t value = (0b1000) | (0b1000 << 4); //gyro and accel batched at 480Hz
+            static constexpr uint8_t value = (0b0110) | (0b1000 << 4); //gyro and accel batched at 480Hz
         };
         struct FifoCtrl4Mode {
             static constexpr uint8_t reg = 0x0a;
@@ -108,44 +108,45 @@ struct LSM6DSV
         return result;
     }
 
-    #pragma pack(push, 1)
-    struct FifoEntryAligned {
-        union {
-            int16_t xyz[3];
-            uint8_t raw[6];
-        };
-    };
-    #pragma pack(pop)
-
-    static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
+    static constexpr size_t FullFifoEntrySize = 7;
 
     template <typename AccelCall, typename GyroCall>
     void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
         const auto fifo_status = i2c.readReg16(Regs::FifoStatus);
-        const auto available_axes = fifo_status & 0x1ff;
-        const auto fifo_bytes = available_axes * 7;
+        const auto available_data = fifo_status & 0x1ff;
+        const auto fifo_bytes = available_data * 7;
+
+        static int print_counter = 0;
+        if (print_counter == 16) {
+            printf("%d\n", available_data);
+            print_counter = 0;
+        }
+        print_counter++;
         
         std::array<uint8_t, FullFifoEntrySize * 8> read_buffer; // max 8 readings
         const auto bytes_to_read = std::min(static_cast<size_t>(read_buffer.size()),
             static_cast<size_t>(fifo_bytes)) / FullFifoEntrySize * FullFifoEntrySize;
         i2c.readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
         for (auto i=0u; i<bytes_to_read; i+=FullFifoEntrySize) {
-            FifoEntryAligned entry;
             uint8_t tag = read_buffer[i] >> 3;
-            memcpy(entry.raw, &read_buffer[i+0x1], sizeof(FifoEntryAligned)); // skip fifo header
+
+            uint8_t *raw = &read_buffer[i + 1];
+            int16_t xyz[3];
 
             switch (tag) {
                 case 0x01: // Gyro NC
-                    processGyroSample(entry.xyz, float((currentTimestamp - previousGyroTimestamp) * 21.75 / 1e6));
+                    memcpy(xyz, raw, sizeof(xyz));
+                    processGyroSample(xyz, float((currentTimestamp - previousGyroTimestamp) * 21.75 / 1e6));
                     previousGyroTimestamp = currentTimestamp;
                     break;
                 case 0x02: // Accel NC
-                    processAccelSample(entry.xyz, float((currentTimestamp - previousAccelTimestamp) * 21.75 / 1e6));
+                    memcpy(xyz, raw, sizeof(xyz));
+                    processAccelSample(xyz, float((currentTimestamp - previousAccelTimestamp) * 21.75 / 1e6));
                     previousAccelTimestamp = currentTimestamp;
                     break;
                 case 0x04: // Timestamp
                     // Multiply by 21.75 to convert to microseconds, divide by 1e6 to convert to seconds
-                    currentTimestamp = entry.raw[0] | (entry.raw[1] << 8) | (entry.raw[2] << 16) | (entry.raw[3] << 24);
+                    // currentTimestamp = raw[0] | (raw[1] << 8) | (raw[2] << 16) | (raw[3] << 24);
                     break;
             }
         }      

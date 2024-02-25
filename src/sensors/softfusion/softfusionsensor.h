@@ -73,6 +73,7 @@ class SoftFusionSensor : public Sensor
             static_cast<sensor_real_t>(xyz[2]) };
 
         float tmp[3];
+        #pragma unroll
         for (uint8_t i = 0; i < 3; i++)
             tmp[i] = (accelData[i] - m_calibration.A_B[i]);
 
@@ -90,11 +91,6 @@ class SoftFusionSensor : public Sensor
             gyroTempCalibrator->updateGyroTemperatureCalibration(m_sensor.getDirectTemp(), restDetected, xyz[0], xyz[1], xyz[2]);
         #endif
 
-        const sensor_real_t scaledData[] = {
-            static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[0]) - m_calibration.G_off[0])),
-            static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[1]) - m_calibration.G_off[1])),
-            static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off[2]))};
-
         float Gxyz[3];
         float GOxyz[3];
         if (gyroTempCalibrator->approximateOffset(m_sensor.getDirectTemp(), GOxyz)) {
@@ -104,9 +100,9 @@ class SoftFusionSensor : public Sensor
         }
         else
         {
-            Gxyz[0] = scaledData[0];
-            Gxyz[1] = scaledData[1];
-            Gxyz[2] = scaledData[2];
+            Gxyz[0] = static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[0]) - m_calibration.G_off[0]));
+            Gxyz[1] = static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[1]) - m_calibration.G_off[1]));
+            Gxyz[2] = static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off[2]));
         }
 
         m_fusion.updateGyro(Gxyz, m_calibration.G_Ts);

@@ -68,7 +68,7 @@ struct LSM6DSV
         };
         struct FifoCtrl4Mode {
             static constexpr uint8_t reg = 0x0a;
-            static constexpr uint8_t value = (0b01000110); //continuous mode, timestamp in FIFO
+            static constexpr uint8_t value = (0b00000110); //continuous mode
         };
 
         static constexpr uint8_t FifoStatus = 0x1b;

@@ -14,10 +14,6 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 template <typename I2CImpl>
 struct LSM6DSV
 {
-    uint32_t currentTimestamp = 0;
-    uint32_t previousGyroTimestamp = 0;
-    uint32_t previousAccelTimestamp = 0;
-
     static constexpr uint8_t Address = 0x6a;
     static constexpr auto Name = "LSM6DSV";
     static constexpr auto Type = ImuID::LSM6DSV;
@@ -44,10 +40,6 @@ struct LSM6DSV
         struct HAODRCtrl {
             static constexpr uint8_t reg = 0x62;
             static constexpr uint8_t value = (0b00); //1st ODR table
-        };
-        struct FunctionsCtrl {
-            static constexpr uint8_t reg = 0x50;
-            static constexpr uint8_t value = (0b01000000); //Enable timestamping
         };
         struct Ctrl1XLODR {
             static constexpr uint8_t reg = 0x10;
@@ -89,7 +81,6 @@ struct LSM6DSV
         i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
         delay(20);
         i2c.writeReg(Regs::HAODRCtrl::reg, Regs::HAODRCtrl::value);
-        i2c.writeReg(Regs::FunctionsCtrl::reg, Regs::FunctionsCtrl::value);
         i2c.writeReg(Regs::Ctrl1XLODR::reg, Regs::Ctrl1XLODR::value);
         i2c.writeReg(Regs::Ctrl2GODR::reg, Regs::Ctrl2GODR::value);
         i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
@@ -136,16 +127,10 @@ struct LSM6DSV
 
             switch (tag) {
                 case 0x01: // Gyro NC
-                    processGyroSample(entry.xyz, float((currentTimestamp - previousGyroTimestamp) * 21.75 / 1e6));
-                    previousGyroTimestamp = currentTimestamp;
+                    processGyroSample(entry.xyz, GyrTs);
                     break;
                 case 0x02: // Accel NC
-                    processAccelSample(entry.xyz, float((currentTimestamp - previousAccelTimestamp) * 21.75 / 1e6));
-                    previousAccelTimestamp = currentTimestamp;
-                    break;
-                case 0x04: // Timestamp
-                    // Multiply by 21.75 to convert to microseconds, divide by 1e6 to convert to seconds
-                    currentTimestamp = entry.raw[0] | (entry.raw[1] << 8) | (entry.raw[2] << 16) | (entry.raw[3] << 24);
+                    processAccelSample(entry.xyz, AccTs);
                     break;
             }
         }      
